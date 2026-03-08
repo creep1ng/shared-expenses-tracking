@@ -1,1 +1,3 @@
-"""Domain models package placeholder."""
+from app.db.models import PasswordResetToken, User
+
+__all__ = ["PasswordResetToken", "User"]

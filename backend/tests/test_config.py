@@ -17,12 +17,16 @@ def test_settings_build_database_and_redis_urls(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("REDIS_PORT", "6379")
     monkeypatch.setenv("REDIS_DB", "1")
     monkeypatch.setenv("REDIS_PASSWORD", "redis-secret")
+    monkeypatch.setenv("AUTH_COOKIE_SECURE", "true")
+    monkeypatch.setenv("AUTH_COOKIE_SAMESITE", "strict")
 
     settings = Settings.from_env()
 
     assert settings.database_url == "postgresql+psycopg://postgres:secret@db:5432/shared_expenses"
     assert settings.redis_url == "redis://:redis-secret@redis:6379/1"
     assert settings.database_echo is True
+    assert settings.auth_cookie_secure is True
+    assert settings.auth_cookie_samesite == "strict"
 
 
 def test_settings_allow_empty_redis_password(monkeypatch: pytest.MonkeyPatch) -> None:

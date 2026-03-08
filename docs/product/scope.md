@@ -16,7 +16,18 @@ The MVP must establish a reliable financial foundation before adding advanced pl
 - sign in and sign out
 - secure session persistence
 - protected route behavior
-- password reset flow if practical within the bootstrap window
+- password reset request and confirmation
+
+Implemented in issue `#26`:
+
+- backend endpoints for sign-up, sign-in, sign-out, current-user lookup, and password reset
+- Redis-backed cookie sessions with backend-side validation
+- PostgreSQL-backed users and password reset tokens
+- development/test reset-token response until email delivery is implemented
+
+Still pending around this capability:
+
+- frontend auth screens and end-user email delivery for password reset
 
 Primary issue:
 
