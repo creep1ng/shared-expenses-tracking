@@ -30,8 +30,8 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
-      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-localhost}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     depends_on:
       db:
         condition: service_healthy
