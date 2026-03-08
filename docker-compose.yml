@@ -20,7 +20,7 @@ services:
       NODE_ENV: ${FRONTEND_NODE_ENV:-development}
       PORT: 3000
       NEXT_PUBLIC_API_BASE_PATH: ${NEXT_PUBLIC_API_BASE_PATH:-/api}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     expose:
       - "3000"
     networks:
@@ -34,7 +34,13 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/shared_expenses}
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_NAME: ${DATABASE_NAME:-shared_expenses}
+      DATABASE_USER: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_HOST: ${REDIS_HOST:-redis}
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
       AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
@@ -44,6 +50,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     expose:
       - "8000"
     networks:
