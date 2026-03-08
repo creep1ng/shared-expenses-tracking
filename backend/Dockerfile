@@ -13,7 +13,7 @@ COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
 COPY uv.lock ./
 
-RUN uv sync --frozen-lockfile --no-dev
+RUN uv sync --frozen --no-dev
 
 EXPOSE 8000
 
