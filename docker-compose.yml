@@ -12,7 +12,10 @@ services:
       - app
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/creep1ng/shared-expenses-tracking-frontend:main}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE:-shared-expenses-tracking-frontend:local}
     environment:
       NODE_ENV: ${FRONTEND_NODE_ENV:-development}
       PORT: 3000
@@ -23,7 +26,10 @@ services:
       - app
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/creep1ng/shared-expenses-tracking-backend:main}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-shared-expenses-tracking-backend:local}
     environment:
       APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/shared_expenses}
