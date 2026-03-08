@@ -214,7 +214,7 @@ Traffic model:
 ## Environment bootstrap
 
 1. Copy `.env.example` to `.env`.
-2. Adjust image tags, ports, or credentials if needed.
+2. Replace placeholder values such as `<db-user>` and `<db-password>` with local development credentials, then adjust image tags or ports if needed.
 3. Use `make up` for the containerized stack.
 4. Use `make dev` once dependencies are installed; for the bootstrap backend it runs with `backend/.env.example` defaults when `backend/.env` is absent.
 

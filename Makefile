@@ -95,7 +95,7 @@ format:
 		printf "Skipping backend format: backend project not scaffolded yet\n"; \
 	fi
 	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
-		pnpm --dir "$(FRONTEND_DIR)" format; \
+		pnpm --dir "$(FRONTEND_DIR)" exec prettier --write .; \
 	else \
 		printf "Skipping frontend format: frontend project not scaffolded yet\n"; \
 	fi

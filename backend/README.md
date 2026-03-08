@@ -14,6 +14,6 @@ Minimal FastAPI backend skeleton for issue #36.
 
 ## Environment
 
-Copy `.env.example` to `.env` and adjust values as needed.
+Copy `.env.example` to `.env` and replace placeholder values such as `<db-user>` and `<db-password>` before running services that depend on Postgres.
 
 If `backend/.env` is absent during bootstrap, local `make dev` falls back to the defaults declared in `.env.example`.

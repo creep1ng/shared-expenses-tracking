@@ -26,7 +26,7 @@ services:
     image: ${BACKEND_IMAGE:-ghcr.io/creep1ng/shared-expenses-tracking-backend:main}
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://app:app@db:5432/shared_expenses}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/shared_expenses}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
@@ -46,14 +46,14 @@ services:
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-shared_expenses}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-shared_expenses}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-shared_expenses}"]
       interval: 10s
       timeout: 5s
       retries: 5
