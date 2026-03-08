@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", ".env.example"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -19,14 +19,14 @@ class Settings(BaseSettings):
     app_debug: bool = Field(default=False, alias="APP_DEBUG")
     api_v1_prefix: str = Field(default="/api/v1", alias="API_V1_PREFIX")
 
-    database_host: str = Field(alias="DATABASE_HOST")
+    database_host: str = Field(default="localhost", alias="DATABASE_HOST")
     database_port: int = Field(default=5432, alias="DATABASE_PORT")
-    database_name: str = Field(alias="DATABASE_NAME")
-    database_user: str = Field(alias="DATABASE_USER")
-    database_password: SecretStr = Field(alias="DATABASE_PASSWORD")
+    database_name: str = Field(default="shared_expenses", alias="DATABASE_NAME")
+    database_user: str = Field(default="postgres", alias="DATABASE_USER")
+    database_password: SecretStr = Field(default=SecretStr("postgres"), alias="DATABASE_PASSWORD")
     database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
 
-    redis_host: str = Field(alias="REDIS_HOST")
+    redis_host: str = Field(default="localhost", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
     redis_db: int = Field(default=0, alias="REDIS_DB")
     redis_password: SecretStr | None = Field(default=None, alias="REDIS_PASSWORD")

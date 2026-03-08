@@ -48,7 +48,7 @@ dev-frontend:
 		printf "Frontend package manifest %s/package.json is missing\n" "$(FRONTEND_DIR)"; \
 		exit 1; \
 	fi
-	pnpm --dir "$(FRONTEND_DIR)" dev --hostname 0.0.0.0 --port "$(FRONTEND_PORT)"
+	pnpm --dir "$(FRONTEND_DIR)" dev
 
 dev-backend:
 	@if [ ! -d "$(BACKEND_DIR)" ]; then \
@@ -58,6 +58,9 @@ dev-backend:
 	@if [ ! -f "$(BACKEND_DIR)/pyproject.toml" ]; then \
 		printf "Backend project manifest %s/pyproject.toml is missing\n" "$(BACKEND_DIR)"; \
 		exit 1; \
+	fi
+	@if [ ! -f "$(BACKEND_DIR)/.env" ]; then \
+		printf "Backend .env not found; using bootstrap defaults from %s/.env.example\n" "$(BACKEND_DIR)"; \
 	fi
 	uv run --project "$(BACKEND_DIR)" uvicorn app.main:app --reload --host 0.0.0.0 --port "$(BACKEND_PORT)"
 
@@ -104,7 +107,7 @@ typecheck:
 		printf "Skipping backend typecheck: backend project not scaffolded yet\n"; \
 	fi
 	@if [ -d "$(FRONTEND_DIR)" ] && [ -f "$(FRONTEND_DIR)/package.json" ]; then \
-		pnpm --dir "$(FRONTEND_DIR)" typecheck; \
+		pnpm --dir "$(FRONTEND_DIR)" exec tsc --noEmit; \
 	else \
 		printf "Skipping frontend typecheck: frontend project not scaffolded yet\n"; \
 	fi

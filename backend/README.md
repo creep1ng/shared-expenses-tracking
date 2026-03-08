@@ -15,3 +15,5 @@ Minimal FastAPI backend skeleton for issue #36.
 ## Environment
 
 Copy `.env.example` to `.env` and adjust values as needed.
+
+If `backend/.env` is absent during bootstrap, local `make dev` falls back to the defaults declared in `.env.example`.

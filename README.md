@@ -216,7 +216,7 @@ Traffic model:
 1. Copy `.env.example` to `.env`.
 2. Adjust image tags, ports, or credentials if needed.
 3. Use `make up` for the containerized stack.
-4. Use `make dev` once `frontend/` and `backend/` are scaffolded locally.
+4. Use `make dev` once dependencies are installed; for the bootstrap backend it runs with `backend/.env.example` defaults when `backend/.env` is absent.
 
 ## CI and preview images
 
