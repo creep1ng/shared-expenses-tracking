@@ -18,7 +18,7 @@ const highlights = [
   },
   {
     label: "Salud",
-    value: "/api/health",
+    value: "/api/v1/health",
     copy: "Hay una ruta minima para integraciones de arranque y verificacion basica.",
   },
 ];
@@ -36,7 +36,7 @@ export function HomeShell() {
               producto: autenticacion, espacios de trabajo y registro de movimientos.
             </p>
             <div className="hero-actions">
-              <a className="primary-action" href="/api/health">
+              <a className="primary-action" href="/api/v1/health">
                 Ver health check
               </a>
               <a className="secondary-action" href="https://nextjs.org/docs">

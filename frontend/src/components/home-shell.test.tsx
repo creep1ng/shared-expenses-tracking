@@ -15,7 +15,7 @@ describe("HomeShell", () => {
 
     expect(screen.getByRole("link", { name: /ver health check/i })).toHaveAttribute(
       "href",
-      "/api/health",
+      "/api/v1/health",
     );
   });
 });
