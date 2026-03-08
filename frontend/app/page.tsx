@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { ProtectedHome } from "@/components/auth/protected-home";
-import { getCurrentUserFromServer } from "@/lib/auth/api";
+import { getCurrentUserFromServer } from "@/lib/auth/server";
 
 export default async function Home() {
   const auth = await getCurrentUserFromServer();

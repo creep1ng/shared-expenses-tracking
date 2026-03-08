@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
-import { getCurrentUserFromServer } from "@/lib/auth/api";
+import { getCurrentUserFromServer } from "@/lib/auth/server";
 
 export default async function SignUpPage() {
   const auth = await getCurrentUserFromServer();
