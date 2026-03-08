@@ -1,0 +1,62 @@
+[project]
+name = "shared-expenses-backend"
+version = "0.1.0"
+description = "Backend skeleton for shared expenses tracking"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "alembic>=1.14.1,<2.0.0",
+  "fastapi>=0.115.0,<1.0.0",
+  "pydantic-settings>=2.7.0,<3.0.0",
+  "sqlalchemy>=2.0.38,<3.0.0",
+  "psycopg[binary]>=3.2.0,<4.0.0",
+  "redis>=5.2.0,<6.0.0",
+  "uvicorn[standard]>=0.34.0,<1.0.0",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28.1,<1.0.0",
+  "mypy>=1.15.0,<2.0.0",
+  "pytest>=8.3.5,<9.0.0",
+  "pytest-cov>=6.0.0,<7.0.0",
+  "ruff>=0.11.0,<0.12.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app"]
+
+[tool.uv]
+package = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests", "alembic"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+strict = true
+warn_unused_configs = true
+mypy_path = "src"
+packages = ["app"]
+exclude = ["alembic"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false

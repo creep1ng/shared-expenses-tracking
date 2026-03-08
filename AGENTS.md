@@ -44,6 +44,8 @@ Recommended branch naming:
 - `adr/<short-slug>`
 - `spike/<short-slug>`
 
+If you need to create a TODO-list for multi-step implementations, make commits for each code step that implements code.
+
 ## 4. Shared Definition of Done
 
 The following Definition of Done applies to all issues and must be treated as mandatory:

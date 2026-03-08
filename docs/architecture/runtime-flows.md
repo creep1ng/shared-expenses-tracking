@@ -100,6 +100,21 @@ sequenceDiagram
 
 ## Flow design notes
 
+### Local container entry flow
+
+```mermaid
+sequenceDiagram
+    actor Contributor
+    participant Proxy as nginx reverse proxy
+    participant Frontend as Next.js container
+    participant Backend as FastAPI container
+
+    Contributor->>Proxy: Open http://localhost:8080/
+    Proxy->>Frontend: Forward /
+    Contributor->>Proxy: Call http://localhost:8080/api/
+    Proxy->>Backend: Forward /api/
+```
+
 ### Authentication
 
 - session behavior is backend-owned

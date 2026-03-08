@@ -106,6 +106,26 @@ Default deployment assumption:
 
 This model supports secure cookie-based auth with lower frontend complexity.
 
+## Local bootstrap topology
+
+The root infrastructure baseline standardizes the first local runtime topology through Docker Compose.
+
+Container set:
+
+- `proxy`: nginx reverse proxy exposed to the host
+- `frontend`: Next.js application container
+- `backend`: FastAPI application container
+- `db`: PostgreSQL database
+- `redis`: Redis instance
+
+Routing contract:
+
+- requests to `/` go to the frontend container
+- requests to `/api/` go to the backend container
+- backend-to-database and backend-to-Redis traffic stays on the internal Docker network
+
+This topology mirrors the same-parent-domain deployment assumption and gives the project a stable integration shape before application internals are fully implemented.
+
 ## Architecture boundaries
 
 - The frontend should not own financial truth.
