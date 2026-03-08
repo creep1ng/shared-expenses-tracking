@@ -21,6 +21,7 @@ services:
       PORT: 3000
       NEXT_PUBLIC_API_BASE_PATH: ${NEXT_PUBLIC_API_BASE_PATH:-/api}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:8000}
     expose:
       - "3000"
     networks:
