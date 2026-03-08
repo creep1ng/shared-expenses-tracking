@@ -4,7 +4,7 @@
 
 This document captures the key end-to-end flows that define the application's behavior.
 
-Authentication flows below reflect the current implementation. Financial and workspace flows remain target-state and should be refined as those issues land.
+Authentication flows below reflect the current implementation. Workspace onboarding and invitation acceptance also reflect the current implementation. Financial flows remain target-state and should be refined as those issues land.
 
 ## 1. Sign up flow
 
@@ -122,7 +122,35 @@ sequenceDiagram
     Frontend-->>User: Show workspace home
 ```
 
-## 7. Transaction creation flow
+Notes:
+
+- the creator always becomes the `owner` member of the workspace
+- both personal and shared workspaces use the same membership model
+
+## 7. Workspace invitation acceptance flow
+
+```mermaid
+sequenceDiagram
+    actor Owner
+    actor Invitee
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant DB as PostgreSQL
+
+    Owner->>Frontend: Invite a user by email
+    Frontend->>Backend: POST /workspaces/{workspace_id}/invitations
+    Backend->>Backend: Validate authenticated owner membership
+    Backend->>DB: Store hashed invitation token with expiry
+    Backend-->>Frontend: Return invitation payload
+    Invitee->>Frontend: Accept invitation while authenticated
+    Frontend->>Backend: POST /workspaces/invitations/accept
+    Backend->>Backend: Validate token, invited email, and expiry
+    Backend->>DB: Create workspace member role=member
+    Backend->>DB: Mark invitation accepted
+    Backend-->>Frontend: Return workspace payload for the new member
+```
+
+## 8. Transaction creation flow
 
 ```mermaid
 sequenceDiagram
@@ -142,7 +170,7 @@ sequenceDiagram
     Frontend-->>User: Show success and refreshed list/KPIs
 ```
 
-## 8. Shared expense split flow
+## 9. Shared expense split flow
 
 ```mermaid
 sequenceDiagram
@@ -160,7 +188,7 @@ sequenceDiagram
     Frontend-->>User: Show updated shared balance widget
 ```
 
-## 9. Settle-up flow
+## 10. Settle-up flow
 
 ```mermaid
 sequenceDiagram
@@ -213,6 +241,7 @@ sequenceDiagram
 
 - all protected actions must validate workspace membership
 - owner/member behavior must be enforced by the backend
+- current owner-only actions are workspace settings updates and invitation management
 
 ## Future runtime flows to add
 

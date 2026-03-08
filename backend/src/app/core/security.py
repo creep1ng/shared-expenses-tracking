@@ -56,3 +56,8 @@ def generate_urlsafe_token(length: int = 32) -> str:
 def hash_reset_token(token: str, settings: Settings) -> str:
     pepper = settings.auth_reset_token_pepper.get_secret_value()
     return hashlib.sha256(f"{pepper}:{token}".encode()).hexdigest()
+
+
+def hash_workspace_invitation_token(token: str, settings: Settings) -> str:
+    pepper = settings.workspace_invitation_token_pepper.get_secret_value()
+    return hashlib.sha256(f"{pepper}:{token}".encode()).hexdigest()
