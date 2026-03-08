@@ -11,7 +11,7 @@ export function AuthShell({ children }: AuthShellProps) {
       <div className="auth-page-grid">
         <section className="auth-panel auth-panel-copy">
           <span className="auth-kicker">Shared Expenses</span>
-          <h2 className="auth-panel-title">Control de acceso simple, seguro y en espanol.</h2>
+          <h2 className="auth-panel-title">Control de acceso simple y seguro.</h2>
           <p className="auth-panel-copy-text">
             La autenticacion depende del backend y de sesiones por cookie HTTP only. El frontend
             consume el estado real de la sesion sin guardar tokens en localStorage.
