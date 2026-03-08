@@ -5,7 +5,7 @@ Shared expenses tracking is a workspace-based personal finance application focus
 - managing personal finances in a structured way
 - managing shared expenses with a partner, including split logic and settlement visibility
 
-The repository is currently in the pre-implementation phase. This documentation baseline defines the product scope, engineering constraints, architecture direction, and contributor workflow before application code is introduced.
+The repository now includes the initial backend and frontend bootstrap, with issue `#26` authentication and session management implemented.
 
 ## Product intent
 
@@ -69,6 +69,14 @@ The default deployment topology is:
 - same parent domain for frontend and backend
 - reverse proxy routing to the frontend and backend services
 - backend-issued secure cookie sessions
+
+Current authentication implementation:
+
+- backend exposes `/api/v1/auth/sign-up`, `/sign-in`, `/sign-out`, `/me`, `/password-reset/request`, and `/password-reset/confirm`
+- sign-in issues an HTTP-only session cookie named `shared_expenses_session` by default
+- authenticated session state is stored in Redis with a sliding TTL refreshed on `/api/v1/auth/me`
+- users and password reset tokens are stored in PostgreSQL
+- password reset is token-based; in development/test the reset token is returned in the API response until email delivery is introduced
 
 Core design assumptions:
 
@@ -177,7 +185,7 @@ Current scope of this baseline:
 - GitHub Actions workflows for pull request validation and preview image publishing
 - nginx reverse proxy config for same-parent-domain routing in local Docker Compose
 
-This is intentionally a minimal runnable skeleton for infrastructure and documentation. Application internals in `frontend/` and `backend/` are still expected to be scaffolded in follow-up issues.
+This is a runnable monorepo baseline with backend authentication/session flows in place and a frontend shell ready to integrate authenticated product screens.
 
 ## Command surface
 
@@ -244,4 +252,16 @@ The infrastructure baseline assumes the backend bootstrap will add:
 
 ## Current implementation status
 
-This repository is no longer docs-only. It now has the root-level infrastructure and workflow contract needed for the full bootstrap, while application services remain to be implemented in the backend and frontend worktrees.
+Implemented now:
+
+- root Docker, Make, CI, and reverse proxy baseline
+- FastAPI backend bootstrap with health check and cookie-based auth endpoints
+- PostgreSQL-backed auth entities: `users` and `password_reset_tokens`
+- Redis-backed session storage with backend-owned session validation
+- backend auth tests covering sign-up, sign-in, sign-out, session persistence, duplicate registration rejection, and password reset
+- frontend auth pages and protected landing flow backed by `/api/v1/auth/*` cookie sessions
+- frontend auth helpers and tests for API error handling and sign-in behavior
+
+Not implemented yet:
+
+- workspace, accounts, categories, transactions, transfers, and shared-expense domain features

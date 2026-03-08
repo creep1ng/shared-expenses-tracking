@@ -12,31 +12,46 @@ services:
       - app
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/creep1ng/shared-expenses-tracking-frontend:main}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE:-shared-expenses-tracking-frontend:local}
     environment:
       NODE_ENV: ${FRONTEND_NODE_ENV:-development}
       PORT: 3000
       NEXT_PUBLIC_API_BASE_PATH: ${NEXT_PUBLIC_API_BASE_PATH:-/api}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     expose:
       - "3000"
     networks:
       - app
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/creep1ng/shared-expenses-tracking-backend:main}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-shared-expenses-tracking-backend:local}
     environment:
       APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/shared_expenses}
+      DATABASE_HOST: ${DATABASE_HOST:-db}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_NAME: ${DATABASE_NAME:-shared_expenses}
+      DATABASE_USER: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_HOST: ${REDIS_HOST:-redis}
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
-      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-localhost}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     expose:
       - "8000"
     networks:

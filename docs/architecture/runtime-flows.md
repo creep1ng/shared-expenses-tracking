@@ -4,9 +4,27 @@
 
 This document captures the key end-to-end flows that define the application's behavior.
 
-At the current planning stage, these flows represent intended behavior and should be refined as implementation progresses.
+Authentication flows below reflect the current implementation. Financial and workspace flows remain target-state and should be refined as those issues land.
 
-## 1. Sign in flow
+## 1. Sign up flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant DB as PostgreSQL
+
+    User->>Frontend: Submit email and password
+    Frontend->>Backend: POST /api/v1/auth/sign-up
+    Backend->>Backend: Normalize email and validate password length
+    Backend->>DB: Ensure email is unique
+    Backend->>DB: Create user with hashed password
+    Backend-->>Frontend: Return created user payload
+    Frontend-->>User: Continue to sign-in flow
+```
+
+## 2. Sign in flow
 
 ```mermaid
 sequenceDiagram
@@ -17,14 +35,77 @@ sequenceDiagram
     participant Redis as Redis
 
     User->>Frontend: Submit email and password
-    Frontend->>Backend: POST /auth/login
-    Backend->>DB: Validate user credentials
-    Backend->>Redis: Create session record
-    Backend-->>Frontend: Set secure session cookie
+    Frontend->>Backend: POST /api/v1/auth/sign-in
+    Backend->>DB: Validate user credentials and active status
+    Backend->>Redis: Create auth:session:<session_id> entry with TTL
+    Backend-->>Frontend: Set HTTP-only session cookie
     Frontend-->>User: Redirect to workspace selection or dashboard
 ```
 
-## 2. Workspace onboarding flow
+## 3. Session persistence flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant Redis as Redis
+    participant DB as PostgreSQL
+
+    User->>Frontend: Open protected screen
+    Frontend->>Backend: GET /api/v1/auth/me with session cookie
+    Backend->>Redis: Load session payload by cookie value
+    Backend->>DB: Load user by user_id from session payload
+    Backend->>Redis: Refresh session TTL
+    Backend-->>Frontend: Return authenticated user
+    Frontend-->>User: Keep session active
+```
+
+Notes:
+
+- the backend is the auth source of truth; the frontend only forwards the cookie
+- if the cookie is missing, the Redis entry is gone, or the user is inactive, `/api/v1/auth/me` returns `401 Not authenticated.`
+
+## 4. Sign out flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant Redis as Redis
+
+    User->>Frontend: Trigger sign out
+    Frontend->>Backend: POST /api/v1/auth/sign-out
+    Backend->>Redis: Delete auth:session:<session_id>
+    Backend-->>Frontend: Clear session cookie
+    Frontend-->>User: Return to unauthenticated state
+```
+
+## 5. Password reset flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant DB as PostgreSQL
+
+    User->>Frontend: Request password reset with email
+    Frontend->>Backend: POST /api/v1/auth/password-reset/request
+    Backend->>DB: Look up user by normalized email
+    Backend->>DB: Delete expired tokens and revoke prior tokens for that user
+    Backend->>DB: Store hashed reset token with expiry
+    Backend-->>Frontend: Return generic success message
+    Note over Backend,Frontend: In development/test, plaintext reset token is also returned
+    User->>Frontend: Submit token and new password
+    Frontend->>Backend: POST /api/v1/auth/password-reset/confirm
+    Backend->>DB: Validate active token and update password hash
+    Backend->>DB: Mark token as consumed
+    Backend-->>Frontend: Return reset success message
+```
+
+## 6. Workspace onboarding flow
 
 ```mermaid
 sequenceDiagram
@@ -41,7 +122,7 @@ sequenceDiagram
     Frontend-->>User: Show workspace home
 ```
 
-## 3. Transaction creation flow
+## 7. Transaction creation flow
 
 ```mermaid
 sequenceDiagram
@@ -61,7 +142,7 @@ sequenceDiagram
     Frontend-->>User: Show success and refreshed list/KPIs
 ```
 
-## 4. Shared expense split flow
+## 8. Shared expense split flow
 
 ```mermaid
 sequenceDiagram
@@ -79,7 +160,7 @@ sequenceDiagram
     Frontend-->>User: Show updated shared balance widget
 ```
 
-## 5. Settle-up flow
+## 9. Settle-up flow
 
 ```mermaid
 sequenceDiagram
@@ -117,8 +198,10 @@ sequenceDiagram
 
 ### Authentication
 
-- session behavior is backend-owned
-- the frontend should not be treated as the source of auth truth
+- session behavior is backend-owned and Redis-backed
+- the session cookie is HTTP-only, with configurable `secure`, `samesite`, and optional `domain`
+- password hashes use PBKDF2-SHA256 plus a configured pepper
+- reset tokens are stored hashed in PostgreSQL and have a dedicated TTL
 
 ### Financial correctness
 
@@ -136,7 +219,6 @@ sequenceDiagram
 As new features are introduced, add sequence or flow diagrams for:
 
 - invitation acceptance
-- password reset
 - receipt upload
 - scheduled payment generation
 - budget status recomputation

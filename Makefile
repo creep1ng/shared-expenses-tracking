@@ -125,6 +125,6 @@ test:
 	fi
 
 migrate:
-	$(COMPOSE) run --rm backend sh -lc 'if [ -f alembic.ini ]; then alembic upgrade head; else printf "Missing backend/alembic.ini; scaffold backend before running migrations\\n"; exit 1; fi'
+	$(COMPOSE) run --rm backend sh -lc 'if [ -f alembic.ini ]; then uv run alembic upgrade head; else printf "Missing backend/alembic.ini; scaffold backend before running migrations\\n"; exit 1; fi'
 
 ci: lint typecheck test

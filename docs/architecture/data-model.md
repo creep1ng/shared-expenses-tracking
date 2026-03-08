@@ -5,6 +5,7 @@
 The initial schema must support:
 
 - secure user access
+- password reset and session recovery
 - personal and shared workspaces
 - workspace membership and permissions
 - account-based financial tracking
@@ -17,9 +18,34 @@ The initial schema must support:
 
 Represents an authenticated person using the system.
 
+Currently implemented fields:
+
+- unique normalized email
+- password hash
+- `is_active` flag
+- audit timestamps
+
 ### sessions
 
 Represents authenticated session state managed by the backend.
+
+Current implementation note:
+
+- sessions are stored in Redis, not PostgreSQL
+- each session is keyed as `auth:session:<session_id>`
+- payload currently contains `user_id` plus creation metadata
+- session validity is controlled by TTL and refreshed on authenticated reads
+
+### password_reset_tokens
+
+Represents one-time password reset tokens.
+
+Currently implemented behavior:
+
+- token values are persisted only as hashes
+- each token belongs to a user
+- tokens expire by timestamp and can be consumed once
+- issuing a new reset request revokes previous tokens for that user
 
 ### workspaces
 
@@ -91,7 +117,7 @@ For shared-expense support, transactions should be able to store:
 
 ```mermaid
 erDiagram
-    USERS ||--o{ SESSIONS : has
+    USERS ||--o{ PASSWORD_RESET_TOKENS : has
     USERS ||--o{ WORKSPACE_MEMBERS : joins
     WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
     WORKSPACES ||--o{ WORKSPACE_INVITATIONS : issues
@@ -106,16 +132,19 @@ erDiagram
         uuid id
         string email
         string password_hash
+        boolean is_active
         datetime created_at
         datetime updated_at
     }
 
-    SESSIONS {
+    PASSWORD_RESET_TOKENS {
         uuid id
         uuid user_id
-        string session_key
+        string token_hash
         datetime expires_at
+        datetime consumed_at
         datetime created_at
+        datetime updated_at
     }
 
     WORKSPACES {
@@ -183,6 +212,12 @@ erDiagram
 ```
 
 ## Notes on future evolution
+
+## Auth model notes
+
+- the original planned `sessions` table is not part of the current schema; runtime session state is Redis-backed
+- PostgreSQL currently persists durable auth entities only through `users` and `password_reset_tokens`
+- this matches the implemented backend-owned secure cookie session flow
 
 Likely future schema extensions include:
 
