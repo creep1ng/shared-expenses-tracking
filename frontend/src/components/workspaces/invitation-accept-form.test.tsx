@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
     replace: replaceMock,
     refresh: refreshMock,
   }),
-  useSearchParams: () => new URLSearchParams("token=query-token-12345678901234567890"),
+  useSearchParams: () => new URLSearchParams(""),
 }));
 
 const acceptWorkspaceInvitationMock = vi.fn();
@@ -46,7 +46,7 @@ describe("InvitationAcceptForm", () => {
     setTimeoutSpy.mockRestore();
   });
 
-  it("prefills the token from the query string and redirects after success", async () => {
+  it("prefills the token from initialToken prop and redirects after success", async () => {
     const user = userEvent.setup();
 
     acceptWorkspaceInvitationMock.mockResolvedValue({
@@ -56,7 +56,7 @@ describe("InvitationAcceptForm", () => {
       },
     });
 
-    render(<InvitationAcceptForm />);
+    render(<InvitationAcceptForm initialToken="query-token-12345678901234567890" />);
 
     expect(screen.getByLabelText(/token de invitacion/i)).toHaveValue(
       "query-token-12345678901234567890",
@@ -69,6 +69,30 @@ describe("InvitationAcceptForm", () => {
     await waitFor(() => {
       expect(replaceMock).toHaveBeenCalledWith("/?workspace=workspace-99");
       expect(refreshMock).toHaveBeenCalled();
+    });
+  });
+
+  it("allows manual token entry when no initialToken is provided", async () => {
+    const user = userEvent.setup();
+
+    acceptWorkspaceInvitationMock.mockResolvedValue({
+      workspace: {
+        id: "workspace-99",
+        name: "Viaje a Madrid",
+      },
+    });
+
+    render(<InvitationAcceptForm initialToken={null} />);
+
+    const tokenInput = screen.getByLabelText(/token de invitacion/i);
+    expect(tokenInput).toHaveValue("");
+
+    await user.type(tokenInput, "manual-token-12345678901234567890");
+
+    await user.click(screen.getByRole("button", { name: /aceptar invitacion/i }));
+
+    expect(acceptWorkspaceInvitationMock).toHaveBeenCalledWith({
+      token: "manual-token-12345678901234567890",
     });
   });
 });

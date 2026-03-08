@@ -16,7 +16,11 @@ import {
 } from "@/lib/workspaces/schemas";
 import { acceptWorkspaceInvitation } from "@/lib/workspaces/api";
 
-export function InvitationAcceptForm() {
+type InvitationAcceptFormProps = {
+  initialToken?: string | null;
+};
+
+export function InvitationAcceptForm({ initialToken = null }: InvitationAcceptFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -30,12 +34,17 @@ export function InvitationAcceptForm() {
   });
 
   useEffect(() => {
+    if (initialToken) {
+      form.setValue("token", initialToken);
+      return;
+    }
+
     const token = searchParams.get("token");
 
     if (token) {
       form.setValue("token", token);
     }
-  }, [form, searchParams]);
+  }, [form, searchParams, initialToken]);
 
   const onSubmit = form.handleSubmit((values) => {
     setSubmitError(null);

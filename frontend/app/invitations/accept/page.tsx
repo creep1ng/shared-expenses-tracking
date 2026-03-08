@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -13,18 +14,22 @@ type AcceptInvitationPageProps = {
 export default async function AcceptInvitationPage({ searchParams }: AcceptInvitationPageProps) {
   const auth = await getCurrentUserFromServer();
   const params = searchParams ? await searchParams : undefined;
+  const urlToken = params?.token;
+
+  if (urlToken && urlToken.length >= 20) {
+    redirect(`/invitations?token=${encodeURIComponent(urlToken)}`);
+  }
+
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get("pending_invitation_token")?.value ?? null;
 
   if (!auth) {
-    const redirectTarget = params?.token
-      ? `/invitations/accept?token=${encodeURIComponent(params.token)}`
-      : "/invitations/accept";
-
-    redirect(`/sign-in?redirect=${encodeURIComponent(redirectTarget)}`);
+    redirect("/sign-in?redirect=%2Finvitations%2Faccept");
   }
 
   return (
     <AuthShell>
-      <InvitationAcceptForm />
+      <InvitationAcceptForm initialToken={cookieToken} />
     </AuthShell>
   );
 }
