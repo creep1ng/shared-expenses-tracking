@@ -165,8 +165,83 @@ Every issue shares a common Definition of Done, documented in:
 - settle-up flow
 - dashboard KPI cards
 
-## Local setup status
+## Local setup and infrastructure baseline
 
-Application bootstrap has not started yet. Setup instructions will be added once the initial monorepo, Docker configuration, and command surface are implemented.
+The repository now includes the root infrastructure contract for the bootstrap phase.
 
-Until then, this repository should be treated as a documentation-first planning baseline for the upcoming implementation.
+Current scope of this baseline:
+
+- root `Makefile` defining the expected command surface
+- root `docker-compose.yml` with `proxy`, `frontend`, `backend`, `db`, and `redis`
+- `.env.example` documenting runtime defaults
+- GitHub Actions workflows for pull request validation and preview image publishing
+- nginx reverse proxy config for same-parent-domain routing in local Docker Compose
+
+This is intentionally a minimal runnable skeleton for infrastructure and documentation. Application internals in `frontend/` and `backend/` are still expected to be scaffolded in follow-up issues.
+
+## Command surface
+
+The repository standardizes a Docker-first split command model:
+
+- `make dev`: run frontend and backend locally with hot reload
+- `make up`: run the full Docker Compose topology in the background
+- `make down`: stop the full Docker Compose topology and remove orphan containers
+- `make migrate`: execute Alembic migrations in the backend container
+- `make lint`: run backend and frontend lint commands when those projects exist
+- `make format`: run backend and frontend formatting commands when those projects exist
+- `make typecheck`: run backend and frontend type checks when those projects exist
+- `make test`: run backend and frontend tests when those projects exist
+- `make ci`: run `lint`, `typecheck`, and `test`
+
+Until `frontend/` and `backend/` are scaffolded, the non-Docker validation targets intentionally skip missing application workspaces instead of failing on absent manifests.
+
+## Local topology
+
+The default local Docker topology is:
+
+- `proxy`: nginx entrypoint exposed on `localhost:8080`
+- `frontend`: Next.js container behind the reverse proxy
+- `backend`: FastAPI container behind the reverse proxy
+- `db`: PostgreSQL for application persistence
+- `redis`: Redis for session and short-lived runtime state
+
+Traffic model:
+
+- `/` routes to the frontend service
+- `/api/` routes to the backend service
+- direct database and Redis ports remain published for local inspection and tooling
+
+## Environment bootstrap
+
+1. Copy `.env.example` to `.env`.
+2. Adjust image tags, ports, or credentials if needed.
+3. Use `make up` for the containerized stack.
+4. Use `make dev` once `frontend/` and `backend/` are scaffolded locally.
+
+## CI and preview images
+
+Two root workflows are defined:
+
+- `.github/workflows/ci.yml`: validates Compose configuration and the root command surface on pull requests to `main`
+- `.github/workflows/docker-preview.yml`: builds and publishes preview images to GHCR when component Dockerfiles exist
+
+Preview publication behavior:
+
+- pushes to `main` publish branch and SHA tags
+- pull requests from the same repository can publish PR preview tags
+- pull requests from forks build without push
+- if `frontend/Dockerfile` or `backend/Dockerfile` is not present yet, the corresponding image job is skipped cleanly
+
+## Migration expectation
+
+`make migrate` is reserved for Alembic schema application and should run `alembic upgrade head` inside the backend container.
+
+The infrastructure baseline assumes the backend bootstrap will add:
+
+- `backend/alembic.ini`
+- `backend/alembic/`
+- a minimal baseline revision that can be applied in empty environments
+
+## Current implementation status
+
+This repository is no longer docs-only. It now has the root-level infrastructure and workflow contract needed for the full bootstrap, while application services remain to be implemented in the backend and frontend worktrees.

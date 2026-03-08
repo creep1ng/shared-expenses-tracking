@@ -121,6 +121,21 @@ Examples:
 - docs updated if behavior or architecture changed
 - ADR created or updated if needed
 
+## Root command contract
+
+The repository root owns the shared operational command surface through `make`.
+
+Required semantics:
+
+- `make dev`: runs frontend and backend locally with hot reload, outside Docker Compose
+- `make up`: starts the full Docker Compose topology, including reverse proxy and backing services
+- `make down`: stops the Docker Compose topology
+- `make migrate`: applies Alembic migrations in the backend runtime context
+
+Supporting commands such as `lint`, `format`, `typecheck`, `test`, and `ci` should remain rooted at the repository top level so contributors and CI use the same interface.
+
+This split keeps day-to-day application development fast while preserving a reproducible full-stack Docker path for integration and preview environments.
+
 ## Release philosophy
 
 Prefer merging smaller validated increments over large multi-concern branches.
