@@ -229,3 +229,9 @@ Likely future schema extensions include:
 - settlement-specific records or derived net balance views
 
 Those additions should be layered onto the core model rather than forcing a redesign of workspace, accounts, categories, and transactions.
+
+## Implemented category notes
+
+- categories are workspace-scoped records with `name`, `type`, `icon`, `color`, and nullable `archived_at`
+- active uniqueness is enforced on `(workspace_id, type, lower(name))`, allowing archived names to be reused later
+- workspace creation and migration backfill both use the same default-category seed set so existing and new workspaces converge on the same baseline

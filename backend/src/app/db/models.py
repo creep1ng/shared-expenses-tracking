@@ -5,9 +5,11 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
     String,
     Text,
     UniqueConstraint,
@@ -51,6 +53,18 @@ class WorkspaceInvitationStatus(str, Enum):
     ACCEPTED = "accepted"
     REVOKED = "revoked"
     EXPIRED = "expired"
+
+
+class AccountType(str, Enum):
+    CASH = "cash"
+    BANK_ACCOUNT = "bank_account"
+    SAVINGS_ACCOUNT = "savings_account"
+    CREDIT_CARD = "credit_card"
+
+
+class CategoryType(str, Enum):
+    INCOME = "income"
+    EXPENSE = "expense"
 
 
 class User(TimestampMixin, Base):
@@ -135,6 +149,14 @@ class Workspace(TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
     invitations: Mapped[list[WorkspaceInvitation]] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
+    accounts: Mapped[list[Account]] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
+    categories: Mapped[list[Category]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
@@ -228,3 +250,94 @@ class WorkspaceInvitation(TimestampMixin, Base):
         back_populates="accepted_workspace_invitations",
         foreign_keys=[accepted_by_user_id],
     )
+
+
+class Account(TimestampMixin, Base):
+    __tablename__ = "accounts"
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    type: Mapped[AccountType] = mapped_column(
+        SAEnum(
+            AccountType,
+            name="account_type",
+            native_enum=False,
+            values_callable=lambda enum_class: [item.value for item in enum_class],
+        ),
+        nullable=False,
+    )
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    initial_balance_minor: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    current_balance_minor: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_accounts_workspace_id_active_name",
+            "workspace_id",
+            func.lower(name),
+            unique=True,
+            postgresql_where=archived_at.is_(None),
+            sqlite_where=archived_at.is_(None),
+        ),
+    )
+
+    workspace: Mapped[Workspace] = relationship(back_populates="accounts")
+
+    @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None
+
+
+class Category(TimestampMixin, Base):
+    __tablename__ = "categories"
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    type: Mapped[CategoryType] = mapped_column(
+        SAEnum(
+            CategoryType,
+            name="category_type",
+            native_enum=False,
+            values_callable=lambda enum_class: [item.value for item in enum_class],
+        ),
+        nullable=False,
+    )
+    icon: Mapped[str] = mapped_column(String(64), nullable=False)
+    color: Mapped[str] = mapped_column(String(32), nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_categories_workspace_id_type_active_name",
+            "workspace_id",
+            "type",
+            func.lower(name),
+            unique=True,
+            postgresql_where=archived_at.is_(None),
+            sqlite_where=archived_at.is_(None),
+        ),
+    )
+
+    workspace: Mapped[Workspace] = relationship(back_populates="categories")
+
+    @property
+    def is_archived(self) -> bool:
+        return self.archived_at is not None

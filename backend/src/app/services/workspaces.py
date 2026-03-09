@@ -20,6 +20,7 @@ from app.db.models import (
     WorkspaceType,
 )
 from app.repositories.auth import UserRepository
+from app.repositories.categories import CategoryRepository
 from app.repositories.workspaces import (
     WorkspaceInvitationRepository,
     WorkspaceMemberRepository,
@@ -47,6 +48,7 @@ class WorkspaceService:
         self._workspaces = WorkspaceRepository(session)
         self._members = WorkspaceMemberRepository(session)
         self._invitations = WorkspaceInvitationRepository(session)
+        self._categories = CategoryRepository(session)
 
     def create_workspace(
         self, *, current_user: User, name: str, workspace_type: WorkspaceType
@@ -62,6 +64,7 @@ class WorkspaceService:
             user_id=current_user.id,
             role=WorkspaceMemberRole.OWNER,
         )
+        self._categories.ensure_default_categories_for_workspace(workspace_id=workspace.id)
         self._session.commit()
         return self.get_workspace_access(
             workspace_id=workspace.id, current_user=current_user, membership=membership

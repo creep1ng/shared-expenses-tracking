@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
+import { AccountsPanel } from "@/components/accounts/accounts-panel";
+import { CategoriesPanel } from "@/components/categories/categories-panel";
 import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { WorkspaceInvitationsPanel } from "@/components/workspaces/workspace-invitations-panel";
 import { WorkspaceList } from "@/components/workspaces/workspace-list";
@@ -296,6 +298,8 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
               <>
                 {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
                 <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
+                <AccountsPanel workspaceId={selectedWorkspace.id} />
+                <CategoriesPanel workspaceId={selectedWorkspace.id} />
                 <WorkspaceMembersList members={members} />
                 <WorkspaceInvitationsPanel
                   workspace={selectedWorkspace}

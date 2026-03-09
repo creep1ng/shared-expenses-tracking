@@ -118,6 +118,7 @@ sequenceDiagram
     Frontend->>Backend: POST /workspaces
     Backend->>DB: Create workspace
     Backend->>DB: Create owner membership
+    Backend->>DB: Seed default workspace categories if missing
     Backend-->>Frontend: Return workspace data
     Frontend-->>User: Show workspace home
 ```
@@ -126,6 +127,7 @@ Notes:
 
 - the creator always becomes the `owner` member of the workspace
 - both personal and shared workspaces use the same membership model
+- workspace onboarding also seeds the default income and expense categories used by future selectors
 
 ## 7. Workspace invitation acceptance flow
 
