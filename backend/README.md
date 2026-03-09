@@ -39,7 +39,7 @@ Auth-related environment defaults:
 
 ## Implemented workspace API
 
-- `POST /api/v1/workspaces`: create a personal or shared workspace and owner membership for the creator
+- `POST /api/v1/workspaces`: create a personal or shared workspace, owner membership, and default workspace categories for the creator
 - `GET /api/v1/workspaces`: list the authenticated user's workspaces with their current role and member count
 - `GET /api/v1/workspaces/{workspace_id}`: return workspace details for a member
 - `PATCH /api/v1/workspaces/{workspace_id}`: update workspace name; owner only
@@ -49,11 +49,31 @@ Auth-related environment defaults:
 - `POST /api/v1/workspaces/{workspace_id}/invitations/{invitation_id}/revoke`: revoke a pending invitation; owner only
 - `POST /api/v1/workspaces/invitations/accept`: accept an invitation token and create a member membership
 
+## Implemented account API
+
+- `POST /api/v1/workspaces/{workspace_id}/accounts`: create a workspace-scoped account for any workspace member
+- `GET /api/v1/workspaces/{workspace_id}/accounts`: list active accounts with current balance for any workspace member
+- `PATCH /api/v1/workspaces/{workspace_id}/accounts/{account_id}`: update an active account for any workspace member
+- `POST /api/v1/workspaces/{workspace_id}/accounts/{account_id}/archive`: archive an account without deleting history for any workspace member
+
+## Implemented category API
+
+- `POST /api/v1/workspaces/{workspace_id}/categories`: create a workspace-scoped category for any workspace member
+- `GET /api/v1/workspaces/{workspace_id}/categories`: list active categories by default for any workspace member
+- `PATCH /api/v1/workspaces/{workspace_id}/categories/{category_id}`: update an active category for any workspace member
+- `POST /api/v1/workspaces/{workspace_id}/categories/{category_id}/archive`: archive a category without deleting history for any workspace member
+
 Implementation notes:
 
 - session records are stored in Redis with a sliding TTL
 - users and password reset tokens are stored in PostgreSQL
 - workspaces, memberships, and invitations are stored in PostgreSQL
+- accounts are stored in PostgreSQL and scoped to a workspace
+- account names are unique per workspace only while active; archived names can be reused
+- account balances are stored in integer minor units and `current_balance_minor` initially mirrors `initial_balance_minor`
+- categories are stored in PostgreSQL and scoped to a workspace
+- category names are unique per workspace and category type only while active; archived names can be reused
+- new workspaces automatically receive a default category set, and the same seed logic is reused as an idempotent backfill path for older workspaces
 - password hashes use PBKDF2-SHA256 with a configured pepper
 - reset tokens are stored hashed and, in development/test, the plaintext token is included in the response for local workflows
 - invitation tokens are stored hashed and, in development/test, the plaintext token is included in the invitation creation response for local workflows

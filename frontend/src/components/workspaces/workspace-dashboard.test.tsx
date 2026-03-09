@@ -5,6 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WorkspaceDashboard } from "@/components/workspaces/workspace-dashboard";
 
+vi.mock("@/components/accounts/accounts-panel", () => ({
+  AccountsPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel cuentas {workspaceId}</div>,
+}));
+
+vi.mock("@/components/categories/categories-panel", () => ({
+  CategoriesPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel categorias {workspaceId}</div>,
+}));
+
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 
@@ -123,6 +131,8 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByRole("button", { name: /crear invitacion/i })).toBeInTheDocument();
     expect(screen.getAllByText("owner@example.com")).toHaveLength(2);
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.getByText("Panel cuentas workspace-1")).toBeInTheDocument();
+    expect(screen.getByText("Panel categorias workspace-1")).toBeInTheDocument();
   });
 
   it("hides owner-only invitation controls for members", async () => {
