@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import type { AuthenticatedUserResponse } from "@/lib/auth/types";
 
 const API_BASE_PATH = (process.env.NEXT_PUBLIC_API_BASE_PATH || "/api").replace(/\/$/, "");
+const INTERNAL_API_ORIGIN = process.env.INTERNAL_API_URL?.replace(/\/$/, "");
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 const API_V1_PREFIX = `${API_BASE_PATH}/v1`;
 
@@ -26,6 +27,10 @@ function buildAbsoluteOrigin(requestHeaders: HeaderReader): string | null {
 
 function buildServerApiUrl(path: string, requestHeaders: HeaderReader): string | null {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (INTERNAL_API_ORIGIN) {
+    return `${INTERNAL_API_ORIGIN}${API_V1_PREFIX}${normalizedPath}`;
+  }
 
   if (API_ORIGIN) {
     return `${API_ORIGIN}${API_V1_PREFIX}${normalizedPath}`;

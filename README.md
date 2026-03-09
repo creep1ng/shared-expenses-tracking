@@ -78,6 +78,15 @@ Current authentication implementation:
 - users and password reset tokens are stored in PostgreSQL
 - password reset is token-based; in development/test the reset token is returned in the API response until email delivery is introduced
 
+Current workspace foundation implementation:
+
+- backend exposes `/api/v1/workspaces` create/list/detail/update endpoints plus member and invitation management endpoints
+- workspace roles are currently limited to `owner` and `member`
+- workspace settings and invitation management are owner-only backend-enforced actions
+- workspace detail and member listing require authenticated membership in the target workspace
+- invitation acceptance creates a `member` membership for the authenticated invited user
+- frontend root route now loads a basic authenticated workspace dashboard with creation, member listing, invitation management, and invitation acceptance screens
+
 Core design assumptions:
 
 - a personal workspace is implemented as a one-member workspace

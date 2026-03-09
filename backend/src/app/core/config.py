@@ -58,6 +58,14 @@ class Settings(BaseSettings):
         default=True,
         alias="AUTH_ENABLE_DEV_RESET_TOKEN_RESPONSE",
     )
+    workspace_invitation_ttl_seconds: int = Field(
+        default=60 * 60 * 24 * 7,
+        alias="WORKSPACE_INVITATION_TTL_SECONDS",
+    )
+    workspace_invitation_token_pepper: SecretStr = Field(
+        default=SecretStr("development-workspace-invitation-pepper"),
+        alias="WORKSPACE_INVITATION_TOKEN_PEPPER",
+    )
 
     @property
     def database_url(self) -> str:

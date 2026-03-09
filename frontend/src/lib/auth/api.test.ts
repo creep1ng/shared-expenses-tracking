@@ -24,7 +24,7 @@ describe("auth api helpers", () => {
     await signIn({ email: "user@example.com", password: "secret123" });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/v1/auth/sign-in",
+      "/api/v1/auth/sign-in",
       expect.objectContaining({
         method: "POST",
         credentials: "include",
