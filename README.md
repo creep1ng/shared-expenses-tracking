@@ -5,7 +5,7 @@ Shared expenses tracking is a workspace-based personal finance application focus
 - managing personal finances in a structured way
 - managing shared expenses with a partner, including split logic and settlement visibility
 
-The repository now includes the initial backend and frontend bootstrap, with issue `#26` authentication and session management implemented.
+The repository now includes the backend and frontend foundation for authentication, workspaces, accounts, categories, transactions, and transfers.
 
 ## Product intent
 
@@ -86,6 +86,14 @@ Current workspace foundation implementation:
 - workspace detail and member listing require authenticated membership in the target workspace
 - invitation acceptance creates a `member` membership for the authenticated invited user
 - frontend root route now loads a basic authenticated workspace dashboard with creation, member listing, invitation management, and invitation acceptance screens
+
+Current transaction foundation implementation:
+
+- backend exposes workspace-scoped transaction create, list, detail, update, and delete endpoints
+- a single transaction model covers income, expense, and transfer movements through directional account fields
+- transfers are first-class movements and are excluded from income and expense analytics
+- transaction deletes are hard deletes in the MVP
+- affected account balances are recomputed from transaction history after every transaction write
 
 Core design assumptions:
 
@@ -270,7 +278,9 @@ Implemented now:
 - backend auth tests covering sign-up, sign-in, sign-out, session persistence, duplicate registration rejection, and password reset
 - frontend auth pages and protected landing flow backed by `/api/v1/auth/*` cookie sessions
 - frontend auth helpers and tests for API error handling and sign-in behavior
+- workspace onboarding, roles, invitations, accounts, and categories foundations
+- transactions and transfers foundation with directional account modeling and balance recomputation
 
 Not implemented yet:
 
-- workspace, accounts, categories, transactions, transfers, and shared-expense domain features
+- full shared-expense split flows, settlement handling, and richer analytics/reporting layers

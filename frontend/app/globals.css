@@ -558,6 +558,88 @@ textarea {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
+.transaction-card {
+  gap: 1.1rem;
+}
+
+.transaction-type-chip {
+  border: 1px solid rgba(86, 62, 34, 0.12);
+}
+
+.transaction-type-chip-income {
+  background: rgba(45, 106, 79, 0.12);
+  color: #1f6b4f;
+}
+
+.transaction-type-chip-expense {
+  background: rgba(171, 60, 47, 0.1);
+  color: #8d2c22;
+}
+
+.transaction-type-chip-transfer {
+  background: rgba(19, 78, 74, 0.1);
+  color: #145b55;
+}
+
+.transaction-amount {
+  text-align: right;
+}
+
+.transaction-amount-income {
+  color: #1f6b4f;
+}
+
+.transaction-amount-expense {
+  color: #8d2c22;
+}
+
+.transaction-amount-transfer {
+  color: var(--copy);
+}
+
+.transaction-form-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.transaction-detail-panel {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(86, 62, 34, 0.12);
+}
+
+.transaction-detail-grid {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+}
+
+.transaction-detail-grid div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(86, 62, 34, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.transaction-detail-grid dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.transaction-detail-grid dd {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .dashboard-stats {
   display: grid;
   gap: 1rem;
@@ -735,6 +817,10 @@ textarea {
   }
 
   .entity-split-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .transaction-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

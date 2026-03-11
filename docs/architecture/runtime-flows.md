@@ -4,7 +4,7 @@
 
 This document captures the key end-to-end flows that define the application's behavior.
 
-Authentication flows below reflect the current implementation. Workspace onboarding and invitation acceptance also reflect the current implementation. Financial flows remain target-state and should be refined as those issues land.
+Authentication, workspace, account/category prerequisites, and transaction flows below reflect the current implementation. Shared-expense split and settle-up flows remain target-state and should be refined as those issues land.
 
 ## 1. Sign up flow
 
@@ -162,12 +162,12 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     User->>Frontend: Submit transaction form
-    Frontend->>Backend: POST /transactions
+    Frontend->>Backend: POST /api/v1/workspaces/{workspace_id}/transactions
     Backend->>Backend: Validate session and workspace access
-    Backend->>Backend: Validate account and category
+    Backend->>Backend: Validate account, category, payer, and transaction type rules
     Backend->>Backend: Apply transaction business rules
     Backend->>DB: Persist transaction
-    Backend->>DB: Recalculate affected account balance
+    Backend->>DB: Recompute affected account balances from transaction history
     Backend-->>Frontend: Return created transaction and updated state
     Frontend-->>User: Show success and refreshed list/KPIs
 ```
@@ -182,13 +182,20 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     User->>Frontend: Create shared expense with split config
-    Frontend->>Backend: POST /transactions with paid_by_user_id and split_config
+    Frontend->>Backend: POST /api/v1/workspaces/{workspace_id}/transactions with paid_by_user_id and split_config
     Backend->>Backend: Validate workspace membership and split rules
     Backend->>DB: Persist transaction
     Backend->>Backend: Recompute workspace net balance
     Backend-->>Frontend: Return transaction and net balance summary
     Frontend-->>User: Show updated shared balance widget
 ```
+
+Notes:
+
+- transaction reads now live at `GET /api/v1/workspaces/{workspace_id}/transactions` and `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`
+- transaction writes use `POST`, `PATCH`, and `DELETE` on the same workspace-scoped collection and item routes
+- transaction deletion is a hard delete in the MVP and then triggers balance recomputation for the affected accounts
+- transfer validation requires different active accounts in the same workspace and the same currency on both accounts and the transaction payload
 
 ## 10. Settle-up flow
 

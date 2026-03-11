@@ -5,8 +5,10 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -67,6 +69,12 @@ class CategoryType(str, Enum):
     EXPENSE = "expense"
 
 
+class TransactionType(str, Enum):
+    INCOME = "income"
+    EXPENSE = "expense"
+    TRANSFER = "transfer"
+
+
 class User(TimestampMixin, Base):
     __tablename__ = "users"
 
@@ -96,6 +104,10 @@ class User(TimestampMixin, Base):
     accepted_workspace_invitations: Mapped[list[WorkspaceInvitation]] = relationship(
         back_populates="accepted_by_user",
         foreign_keys="WorkspaceInvitation.accepted_by_user_id",
+    )
+    paid_transactions: Mapped[list[Transaction]] = relationship(
+        back_populates="paid_by_user",
+        foreign_keys="Transaction.paid_by_user_id",
     )
 
 
@@ -157,6 +169,10 @@ class Workspace(TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
     categories: Mapped[list[Category]] = relationship(
+        back_populates="workspace",
+        cascade="all, delete-orphan",
+    )
+    transactions: Mapped[list[Transaction]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
     )
@@ -292,6 +308,14 @@ class Account(TimestampMixin, Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="accounts")
+    source_transactions: Mapped[list[Transaction]] = relationship(
+        back_populates="source_account",
+        foreign_keys="Transaction.source_account_id",
+    )
+    destination_transactions: Mapped[list[Transaction]] = relationship(
+        back_populates="destination_account",
+        foreign_keys="Transaction.destination_account_id",
+    )
 
     @property
     def is_archived(self) -> bool:
@@ -337,7 +361,79 @@ class Category(TimestampMixin, Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="categories")
+    transactions: Mapped[list[Transaction]] = relationship(back_populates="category")
 
     @property
     def is_archived(self) -> bool:
         return self.archived_at is not None
+
+
+class Transaction(TimestampMixin, Base):
+    __tablename__ = "transactions"
+    __table_args__ = (
+        CheckConstraint("amount_minor > 0", name="amount_minor_positive"),
+        Index("ix_transactions_workspace_id_occurred_at", "workspace_id", "occurred_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    type: Mapped[TransactionType] = mapped_column(
+        SAEnum(
+            TransactionType,
+            name="transaction_type",
+            native_enum=False,
+            values_callable=lambda enum_class: [item.value for item in enum_class],
+        ),
+        nullable=False,
+    )
+    source_account_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    destination_account_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("accounts.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    category_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    paid_by_user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    amount_minor: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    split_config: Mapped[dict[str, object] | None] = mapped_column(JSON(), nullable=True)
+
+    workspace: Mapped[Workspace] = relationship(back_populates="transactions")
+    source_account: Mapped[Account | None] = relationship(
+        back_populates="source_transactions",
+        foreign_keys=[source_account_id],
+    )
+    destination_account: Mapped[Account | None] = relationship(
+        back_populates="destination_transactions",
+        foreign_keys=[destination_account_id],
+    )
+    category: Mapped[Category | None] = relationship(back_populates="transactions")
+    paid_by_user: Mapped[User | None] = relationship(
+        back_populates="paid_transactions",
+        foreign_keys=[paid_by_user_id],
+    )
