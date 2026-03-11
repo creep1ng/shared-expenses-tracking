@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -12,7 +12,7 @@ from app.db.models import AccountType, CategoryType, TransactionType
 def _validate_occurred_at_not_future(v: datetime) -> datetime:
     if v.tzinfo is None:
         raise ValueError("occurred_at must be timezone-aware.")
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if v > now:
         raise ValueError("occurred_at cannot be in the future.")
     return v
