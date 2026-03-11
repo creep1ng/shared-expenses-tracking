@@ -45,8 +45,8 @@ async function getErrorFromResponse(response: Response): Promise<string> {
   }
 }
 
-export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(buildApiUrl(path), {
+async function performRequest(path: string, init?: RequestInit): Promise<Response> {
+  return await fetch(buildApiUrl(path), {
     ...init,
     cache: "no-store",
     credentials: "include",
@@ -56,10 +56,22 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
       ...(init?.headers ?? {}),
     },
   });
+}
+
+export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await performRequest(path, init);
 
   if (!response.ok) {
     throw parseApiError({ detail: await getErrorFromResponse(response) }, response.status);
   }
 
   return await readJson<T>(response);
+}
+
+export async function requestVoid(path: string, init?: RequestInit): Promise<void> {
+  const response = await performRequest(path, init);
+
+  if (!response.ok) {
+    throw parseApiError({ detail: await getErrorFromResponse(response) }, response.status);
+  }
 }

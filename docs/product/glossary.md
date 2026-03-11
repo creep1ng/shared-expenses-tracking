@@ -36,7 +36,7 @@ A category that can no longer be used for new entries by default, but remains at
 
 ## Transaction
 
-A recorded financial movement affecting an account.
+A recorded financial movement affecting one or more accounts within a workspace ledger.
 
 Core transaction examples:
 
@@ -46,11 +46,13 @@ Core transaction examples:
 
 Transactions are the fundamental unit of the financial ledger.
 
+In the current model, a transaction can reference a source account, a destination account, or both depending on its type.
+
 ## Transfer
 
 A special type of transaction representing movement of money between two accounts.
 
-Transfers must not be counted as normal income or expense in analytics.
+Transfers are first-class ledger movements and must not be counted as normal income or expense in analytics.
 
 ## Workspace
 

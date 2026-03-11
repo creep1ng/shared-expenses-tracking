@@ -6,11 +6,34 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceDashboard } from "@/components/workspaces/workspace-dashboard";
 
 vi.mock("@/components/accounts/accounts-panel", () => ({
-  AccountsPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel cuentas {workspaceId}</div>,
+  AccountsPanel: ({
+    workspaceId,
+    refreshNonce,
+  }: {
+    workspaceId: string;
+    refreshNonce?: number;
+  }) => <div>Panel cuentas {workspaceId} refresco {refreshNonce ?? 0}</div>,
 }));
 
 vi.mock("@/components/categories/categories-panel", () => ({
   CategoriesPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel categorias {workspaceId}</div>,
+}));
+
+vi.mock("@/components/transactions/transactions-panel", () => ({
+  TransactionsPanel: ({
+    workspaceId,
+    onTransactionsChanged,
+  }: {
+    workspaceId: string;
+    onTransactionsChanged?: () => void;
+  }) => (
+    <div>
+      <span>Panel movimientos {workspaceId}</span>
+      <button onClick={onTransactionsChanged} type="button">
+        Simular cambio de movimientos
+      </button>
+    </div>
+  ),
 }));
 
 const replaceMock = vi.fn();
@@ -131,8 +154,9 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByRole("button", { name: /crear invitacion/i })).toBeInTheDocument();
     expect(screen.getAllByText("owner@example.com")).toHaveLength(2);
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
-    expect(screen.getByText("Panel cuentas workspace-1")).toBeInTheDocument();
+    expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
     expect(screen.getByText("Panel categorias workspace-1")).toBeInTheDocument();
+    expect(screen.getByText("Panel movimientos workspace-1")).toBeInTheDocument();
   });
 
   it("hides owner-only invitation controls for members", async () => {
@@ -217,5 +241,36 @@ describe("WorkspaceDashboard", () => {
       "token-demo-12345678901234567890",
     );
     expect(screen.getByText("nueva@example.com")).toBeInTheDocument();
+  });
+
+  it("refreshes accounts panel immediately after movement changes", async () => {
+    const user = userEvent.setup();
+
+    listWorkspacesMock.mockResolvedValue({ workspaces: [ownerWorkspace] });
+    getWorkspaceMock.mockResolvedValue(ownerWorkspace);
+    listWorkspaceMembersMock.mockResolvedValue({ members: [] });
+    listWorkspaceInvitationsMock.mockResolvedValue({ invitations: [] });
+
+    render(
+      <WorkspaceDashboard
+        user={{
+          id: "user-1",
+          email: "owner@example.com",
+          is_active: true,
+          created_at: "2026-03-08T10:00:00Z",
+          updated_at: "2026-03-08T10:00:00Z",
+        }}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "Casa" });
+    expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /simular cambio de movimientos/i }));
+
+    expect(await screen.findByText("Panel cuentas workspace-1 refresco 1")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getWorkspaceMock).toHaveBeenCalledTimes(2);
+    });
   });
 });

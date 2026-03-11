@@ -51,6 +51,16 @@ class AccountRepository:
         )
         return self._session.scalar(statement)
 
+    def list_by_ids(self, *, workspace_id: UUID, account_ids: set[UUID]) -> list[Account]:
+        if not account_ids:
+            return []
+
+        statement = self._base_query().where(
+            Account.workspace_id == workspace_id,
+            Account.id.in_(account_ids),
+        )
+        return list(self._session.scalars(statement).all())
+
     def get_active_by_name(
         self,
         *,

@@ -133,6 +133,14 @@ class CategoryRepository:
         )
         return self._session.scalar(statement)
 
+    def get_active_by_id(self, *, workspace_id: UUID, category_id: UUID) -> Category | None:
+        statement = self._base_query().where(
+            Category.workspace_id == workspace_id,
+            Category.id == category_id,
+            Category.archived_at.is_(None),
+        )
+        return self._session.scalar(statement)
+
     def get_active_by_name(
         self,
         *,

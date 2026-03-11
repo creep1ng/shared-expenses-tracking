@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { CategoriesPanel } from "@/components/categories/categories-panel";
+import { TransactionsPanel } from "@/components/transactions/transactions-panel";
 import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { WorkspaceInvitationsPanel } from "@/components/workspaces/workspace-invitations-panel";
 import { WorkspaceList } from "@/components/workspaces/workspace-list";
@@ -55,6 +56,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(initialWorkspaceId);
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
+  const [accountsRefreshNonce, setAccountsRefreshNonce] = useState(0);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [latestInvitationToken, setLatestInvitationToken] = useState<string | null>(null);
@@ -153,6 +155,20 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
       setNotice({ type: "error", message: getErrorMessage(error) });
     }
   };
+
+  const handleTransactionsChanged = React.useCallback(async () => {
+    if (!selectedWorkspace) {
+      return;
+    }
+
+    setAccountsRefreshNonce((currentNonce) => currentNonce + 1);
+
+    try {
+      await refreshSelectedWorkspace(selectedWorkspace.id);
+    } catch (error) {
+      setNotice({ type: "error", message: getErrorMessage(error) });
+    }
+  }, [refreshSelectedWorkspace, selectedWorkspace]);
 
   const handleCreateWorkspace = async (values: { name: string; type: "personal" | "shared" }) => {
     setNotice(null);
@@ -298,8 +314,14 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
               <>
                 {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
                 <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
-                <AccountsPanel workspaceId={selectedWorkspace.id} />
+                <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
                 <CategoriesPanel workspaceId={selectedWorkspace.id} />
+                <TransactionsPanel
+                  workspaceId={selectedWorkspace.id}
+                  onTransactionsChanged={() => {
+                    void handleTransactionsChanged();
+                  }}
+                />
                 <WorkspaceMembersList members={members} />
                 <WorkspaceInvitationsPanel
                   workspace={selectedWorkspace}

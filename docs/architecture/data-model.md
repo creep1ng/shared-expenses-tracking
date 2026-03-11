@@ -197,7 +197,8 @@ erDiagram
     TRANSACTIONS {
         uuid id
         uuid workspace_id
-        uuid account_id
+        uuid source_account_id
+        uuid destination_account_id
         uuid category_id
         uuid paid_by_user_id
         string type
@@ -235,3 +236,12 @@ Those additions should be layered onto the core model rather than forcing a rede
 - categories are workspace-scoped records with `name`, `type`, `icon`, `color`, and nullable `archived_at`
 - active uniqueness is enforced on `(workspace_id, type, lower(name))`, allowing archived names to be reused later
 - workspace creation and migration backfill both use the same default-category seed set so existing and new workspaces converge on the same baseline
+
+## Implemented transaction notes
+
+- transactions are workspace-scoped records stored in a single `transactions` table with explicit `source_account_id` and `destination_account_id`
+- `type` is one of `income`, `expense`, or `transfer`, and the allowed account/category combinations are enforced in the backend service layer
+- transfers do not use categories and require active source and destination accounts in the same workspace with the same currency
+- `paid_by_user_id` is optional but, when present, must reference a workspace member
+- `split_config` is nullable JSON reserved for shared-expense flows
+- account `current_balance_minor` is recomputed from transaction history after every transaction create, update, and hard delete

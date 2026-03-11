@@ -63,6 +63,14 @@ Auth-related environment defaults:
 - `PATCH /api/v1/workspaces/{workspace_id}/categories/{category_id}`: update an active category for any workspace member
 - `POST /api/v1/workspaces/{workspace_id}/categories/{category_id}/archive`: archive a category without deleting history for any workspace member
 
+## Implemented transaction API
+
+- `POST /api/v1/workspaces/{workspace_id}/transactions`: create an income, expense, or transfer transaction for any workspace member
+- `GET /api/v1/workspaces/{workspace_id}/transactions`: list workspace transactions with source account, destination account, category, and payer details
+- `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: return a single workspace transaction with directional account fields
+- `PATCH /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: update a transaction and recompute affected account balances
+- `DELETE /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: hard delete a transaction and recompute affected account balances
+
 Implementation notes:
 
 - session records are stored in Redis with a sliding TTL
@@ -74,6 +82,12 @@ Implementation notes:
 - categories are stored in PostgreSQL and scoped to a workspace
 - category names are unique per workspace and category type only while active; archived names can be reused
 - new workspaces automatically receive a default category set, and the same seed logic is reused as an idempotent backfill path for older workspaces
+- transactions are stored in PostgreSQL in a single table with explicit source and destination account references
+- income requires `destination_account_id`; expense requires `source_account_id`; transfer requires both and forbids `category_id`
+- linked accounts and categories must belong to the same workspace, archived accounts/categories are rejected, and account currency must match the transaction currency
+- transfer source and destination accounts must be different and use the same currency
+- `paid_by_user_id`, when present, must reference a workspace member
+- account balances are recomputed from full transaction history after every transaction write
 - password hashes use PBKDF2-SHA256 with a configured pepper
 - reset tokens are stored hashed and, in development/test, the plaintext token is included in the response for local workflows
 - invitation tokens are stored hashed and, in development/test, the plaintext token is included in the invitation creation response for local workflows

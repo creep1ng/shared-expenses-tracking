@@ -182,4 +182,53 @@ describe("AccountsPanel", () => {
     });
     expect(screen.queryByText("Cuenta hogar")).not.toBeInTheDocument();
   });
+
+  it("reloads balances when the refresh nonce changes", async () => {
+    listAccountsMock
+      .mockResolvedValueOnce({
+        accounts: [
+          {
+            id: "acc-1",
+            workspace_id: "workspace-1",
+            name: "Cuenta principal",
+            type: "bank_account",
+            currency: "EUR",
+            initial_balance_minor: 120000,
+            current_balance_minor: 98550,
+            description: "Uso diario",
+            archived_at: null,
+            is_archived: false,
+            created_at: "2026-03-08T10:00:00Z",
+            updated_at: "2026-03-08T10:00:00Z",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        accounts: [
+          {
+            id: "acc-1",
+            workspace_id: "workspace-1",
+            name: "Cuenta principal",
+            type: "bank_account",
+            currency: "EUR",
+            initial_balance_minor: 120000,
+            current_balance_minor: 101050,
+            description: "Uso diario",
+            archived_at: null,
+            is_archived: false,
+            created_at: "2026-03-08T10:00:00Z",
+            updated_at: "2026-03-08T10:05:00Z",
+          },
+        ],
+      });
+
+    const { rerender } = render(<AccountsPanel workspaceId="workspace-1" refreshNonce={0} />);
+
+    expect(await screen.findByText((content) => content.includes("985,50") && content.includes("€"))).toBeInTheDocument();
+
+    rerender(<AccountsPanel workspaceId="workspace-1" refreshNonce={1} />);
+
+    expect(await screen.findByText((content) => content.includes("1010,50") && content.includes("€"))).toBeInTheDocument();
+    expect(listAccountsMock).toHaveBeenCalledTimes(2);
+  });
 });

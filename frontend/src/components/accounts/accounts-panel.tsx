@@ -15,6 +15,7 @@ import type { Account, AccountCreatePayload } from "@/lib/accounts/types";
 
 type AccountsPanelProps = {
   workspaceId: string;
+  refreshNonce?: number;
 };
 
 type Notice = {
@@ -32,7 +33,7 @@ function toAccountFormDefaults(account: Account) {
   } as const;
 }
 
-export function AccountsPanel({ workspaceId }: AccountsPanelProps) {
+export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +55,11 @@ export function AccountsPanel({ workspaceId }: AccountsPanelProps) {
   useEffect(() => {
     setEditingAccountId(null);
     setNotice(null);
+  }, [workspaceId]);
 
+  useEffect(() => {
     void loadAccounts();
-  }, [loadAccounts]);
+  }, [loadAccounts, refreshNonce]);
 
   const handleCreate = async (payload: AccountCreatePayload) => {
     setNotice(null);
