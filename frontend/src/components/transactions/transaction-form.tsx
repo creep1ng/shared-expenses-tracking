@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useMemo, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -35,10 +35,11 @@ type TransactionFormProps = {
   defaultValues?: TransactionFormValues;
   submitLabel: string;
   submittingLabel: string;
-  onSubmitTransaction: (payload: TransactionCreatePayload) => Promise<boolean>;
+  onSubmitTransaction: (payload: TransactionCreatePayload, receiptFile?: File | null) => Promise<boolean>;
   onCancel?: () => void;
   resetOnSuccess?: boolean;
   fieldIdPrefix: string;
+  allowReceiptUpload?: boolean;
 };
 
 export function TransactionForm({
@@ -51,8 +52,11 @@ export function TransactionForm({
   onCancel,
   resetOnSuccess = false,
   fieldIdPrefix,
+  allowReceiptUpload = false,
 }: TransactionFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement | null>(null);
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
     defaultValues,
@@ -75,6 +79,12 @@ export function TransactionForm({
 
   useEffect(() => {
     form.reset(defaultValues);
+
+    setReceiptFile(null);
+
+    if (receiptInputRef.current) {
+      receiptInputRef.current.value = "";
+    }
   }, [defaultValues, form]);
 
   useEffect(() => {
@@ -99,7 +109,7 @@ export function TransactionForm({
         return;
       }
 
-      const isSuccessful = await onSubmitTransaction(payload);
+      const isSuccessful = await onSubmitTransaction(payload, receiptFile);
 
       if (!isSuccessful) {
         return;
@@ -110,6 +120,11 @@ export function TransactionForm({
           ...DEFAULT_TRANSACTION_FORM_VALUES,
           occurredAt: getCurrentDateTimeInputValue(),
         });
+        setReceiptFile(null);
+
+        if (receiptInputRef.current) {
+          receiptInputRef.current.value = "";
+        }
       }
 
       onCancel?.();
@@ -254,6 +269,23 @@ export function TransactionForm({
           <span className="auth-field-error">{form.formState.errors.description.message}</span>
         ) : null}
       </label>
+
+      {allowReceiptUpload ? (
+        <label className="auth-field" htmlFor={`${fieldIdPrefix}-receipt`}>
+          <span className="auth-label">Adjuntar recibo</span>
+          <input
+            id={`${fieldIdPrefix}-receipt`}
+            ref={receiptInputRef}
+            className="auth-input"
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(event) => {
+              const nextFile = event.target.files?.[0] ?? null;
+              setReceiptFile(nextFile);
+            }}
+          />
+        </label>
+      ) : null}
 
       <div className="transaction-form-hint" aria-live="polite">
         <strong>{TRANSACTION_TYPE_LABELS[transactionType]}</strong>

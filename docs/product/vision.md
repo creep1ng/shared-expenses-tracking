@@ -34,6 +34,7 @@ The product should provide a trustworthy financial ledger that supports:
 - real accounts as sources and destinations of money
 - explicit transaction modeling
 - structured categories
+- optional receipt evidence linked to a transaction record
 - clean reporting boundaries for income, expenses, and transfers
 - shared-expense logic built into the same ledger model
 
@@ -117,7 +118,6 @@ The following are not required for the first usable version:
 
 - complex itemized split transactions
 - rich budget forecasting
-- receipt storage workflows
 - scheduled payment automation
 - advanced debt tracking beyond partner net balance
 - elaborate dashboard charts

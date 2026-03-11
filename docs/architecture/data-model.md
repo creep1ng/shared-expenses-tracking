@@ -10,6 +10,7 @@ The initial schema must support:
 - workspace membership and permissions
 - account-based financial tracking
 - categorized transactions
+- single receipt linkage for transactions
 - future-safe shared-expense splitting
 
 ## Core entities
@@ -102,6 +103,7 @@ Initial movement types:
 For shared-expense support, transactions should be able to store:
 
 - payer identity
+- nullable `receipt_url`
 - split configuration
 
 ## Key invariants
@@ -111,6 +113,7 @@ For shared-expense support, transactions should be able to store:
 - every transaction belongs to a workspace
 - transaction permissions derive from workspace membership
 - transfers must not count as standard income or expense in analytics
+- each transaction can link to at most one stored receipt object
 - money values are stored in integer minor units
 
 ## Initial ER diagram
@@ -204,6 +207,7 @@ erDiagram
         string type
         int amount_minor
         string currency
+        string receipt_url
         json split_config
         datetime occurred_at
         string description
@@ -223,7 +227,6 @@ erDiagram
 Likely future schema extensions include:
 
 - credit card limit and cutoff metadata
-- receipts and attachments
 - richer transaction metadata
 - scheduled payments
 - budgets
@@ -243,5 +246,8 @@ Those additions should be layered onto the core model rather than forcing a rede
 - `type` is one of `income`, `expense`, or `transfer`, and the allowed account/category combinations are enforced in the backend service layer
 - transfers do not use categories and require active source and destination accounts in the same workspace with the same currency
 - `paid_by_user_id` is optional but, when present, must reference a workspace member
+- `receipt_url` is nullable and stores the backend-served location of a single receipt linked to the transaction
+- receipt upload is allowed for income, expense, and transfer transactions
+- receipt binaries live in S3-compatible object storage and are streamed back through backend routes
 - `split_config` is nullable JSON reserved for shared-expense flows
 - account `current_balance_minor` is recomputed from transaction history after every transaction create, update, and hard delete

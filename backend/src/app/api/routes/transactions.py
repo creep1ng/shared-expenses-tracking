@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.transactions import get_transaction_service
@@ -10,10 +10,14 @@ from app.db.models import Transaction, User
 from app.schemas.transactions import (
     TransactionCreateRequest,
     TransactionListResponse,
+    TransactionReceiptUploadResponse,
     TransactionResponse,
     TransactionUpdateRequest,
 )
-from app.services.transactions import TransactionService
+from app.services.transactions import (
+    TransactionReceiptUpload,
+    TransactionService,
+)
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/transactions", tags=["transactions"])
 
@@ -93,6 +97,48 @@ def delete_transaction(
         current_user=current_user,
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{transaction_id}/receipt",
+    response_model=TransactionReceiptUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_transaction_receipt(
+    workspace_id: UUID,
+    transaction_id: UUID,
+    receipt: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    transaction_service: TransactionService = Depends(get_transaction_service),
+) -> TransactionReceiptUploadResponse:
+    content = await receipt.read()
+    transaction = transaction_service.upload_receipt(
+        workspace_id=workspace_id,
+        transaction_id=transaction_id,
+        current_user=current_user,
+        upload=TransactionReceiptUpload(
+            content=content,
+            content_type=receipt.content_type or "application/octet-stream",
+        ),
+    )
+    return TransactionReceiptUploadResponse(receipt_url=transaction.receipt_url)
+
+
+@router.get("/{transaction_id}/receipt/{filename}")
+def get_transaction_receipt(
+    workspace_id: UUID,
+    transaction_id: UUID,
+    filename: str,
+    current_user: User = Depends(get_current_user),
+    transaction_service: TransactionService = Depends(get_transaction_service),
+) -> Response:
+    receipt_content = transaction_service.get_receipt_content(
+        workspace_id=workspace_id,
+        transaction_id=transaction_id,
+        filename=filename,
+        current_user=current_user,
+    )
+    return Response(content=receipt_content.content, media_type=receipt_content.content_type)
 
 
 def _build_transaction_response(transaction: Transaction) -> TransactionResponse:

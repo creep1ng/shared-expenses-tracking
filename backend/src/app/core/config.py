@@ -31,6 +31,20 @@ class Settings(BaseSettings):
     redis_db: int = Field(default=0, alias="REDIS_DB")
     redis_password: SecretStr | None = Field(default=None, alias="REDIS_PASSWORD")
 
+    s3_endpoint_url: str = Field(default="http://localhost:9000", alias="S3_ENDPOINT_URL")
+    s3_region: str = Field(default="us-east-1", alias="S3_REGION")
+    s3_access_key_id: SecretStr = Field(default=SecretStr("minioadmin"), alias="S3_ACCESS_KEY_ID")
+    s3_secret_access_key: SecretStr = Field(
+        default=SecretStr("minioadmin"), alias="S3_SECRET_ACCESS_KEY"
+    )
+    s3_bucket: str = Field(default="transaction-receipts", alias="S3_BUCKET")
+    s3_use_ssl: bool = Field(default=False, alias="S3_USE_SSL")
+    s3_force_path_style: bool = Field(default=True, alias="S3_FORCE_PATH_STYLE")
+    transaction_receipt_max_size_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        alias="TRANSACTION_RECEIPT_MAX_SIZE_BYTES",
+    )
+
     auth_cookie_name: str = Field(default="shared_expenses_session", alias="AUTH_COOKIE_NAME")
     auth_cookie_domain: str | None = Field(default=None, alias="AUTH_COOKIE_DOMAIN")
     auth_cookie_secure: bool = Field(default=False, alias="AUTH_COOKIE_SECURE")

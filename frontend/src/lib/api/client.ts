@@ -45,16 +45,30 @@ async function getErrorFromResponse(response: Response): Promise<string> {
   }
 }
 
+function isFormDataBody(body: BodyInit | null | undefined): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
+function buildRequestHeaders(init?: RequestInit): Headers {
+  const headers = new Headers(init?.headers ?? {});
+
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  if (init?.body && !isFormDataBody(init.body) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return headers;
+}
+
 async function performRequest(path: string, init?: RequestInit): Promise<Response> {
   return await fetch(buildApiUrl(path), {
     ...init,
     cache: "no-store",
     credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
-      ...(init?.headers ?? {}),
-    },
+    headers: buildRequestHeaders(init),
   });
 }
 
