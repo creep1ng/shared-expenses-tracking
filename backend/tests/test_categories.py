@@ -373,7 +373,7 @@ def _create_workspace(client: TestClient, *, name: str, workspace_type: str) -> 
         json={"name": name, "type": workspace_type},
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, str], response.json())
 
 
 def _create_invitation(client: TestClient, *, workspace_id: str, email: str) -> dict[str, str]:
@@ -382,7 +382,7 @@ def _create_invitation(client: TestClient, *, workspace_id: str, email: str) -> 
         json={"email": email},
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, str], response.json())
 
 
 def _create_category(
@@ -404,4 +404,4 @@ def _create_category(
         },
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, object], response.json())

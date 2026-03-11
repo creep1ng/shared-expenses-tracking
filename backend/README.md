@@ -70,6 +70,8 @@ Auth-related environment defaults:
 - `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: return a single workspace transaction with directional account fields
 - `PATCH /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: update a transaction and recompute affected account balances
 - `DELETE /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`: hard delete a transaction and recompute affected account balances
+- `POST /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt`: upload or replace a transaction receipt in object storage
+- `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt/{filename}`: stream the stored receipt back through the API
 
 Implementation notes:
 
@@ -88,6 +90,9 @@ Implementation notes:
 - transfer source and destination accounts must be different and use the same currency
 - `paid_by_user_id`, when present, must reference a workspace member
 - account balances are recomputed from full transaction history after every transaction write
+- transaction receipts are stored in S3-compatible object storage with a stable backend-served `receipt_url` and a single receipt per transaction
+- supported receipt media types are PNG, JPEG, and PDF; uploads larger than 10 MB are rejected
+- deleting a transaction also attempts to delete its stored receipt object
 - password hashes use PBKDF2-SHA256 with a configured pepper
 - reset tokens are stored hashed and, in development/test, the plaintext token is included in the response for local workflows
 - invitation tokens are stored hashed and, in development/test, the plaintext token is included in the invitation creation response for local workflows

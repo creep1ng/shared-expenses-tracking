@@ -79,11 +79,13 @@ Primary issue:
 - create, view, edit, and delete transactions
 - enforce account and category linkage
 - recalculate affected balances correctly
+- upload or replace one receipt per transaction across income, expense, and transfer types
 
 Primary issues:
 
 - `#30 Transactions CRUD Foundation`
 - `#23 Link Transactions to Accounts and Categories`
+- `#22 Integrate Receipt Uploads into Transaction Form`
 
 #### 7. Transfers
 
@@ -152,10 +154,6 @@ These items are important, but they should follow the financial core and shared-
 ## Explicitly deferred beyond MVP
 
 The following are valid roadmap items but should be deferred until the core system is stable and tested.
-
-### Receipts and file management
-
-- `#22 Integrate Receipt Uploads into Transaction Form`
 
 ### Budgets and forecasts
 

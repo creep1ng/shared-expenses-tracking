@@ -17,6 +17,14 @@ def test_settings_build_database_and_redis_urls(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("REDIS_PORT", "6379")
     monkeypatch.setenv("REDIS_DB", "1")
     monkeypatch.setenv("REDIS_PASSWORD", "redis-secret")
+    monkeypatch.setenv("S3_ENDPOINT_URL", "http://minio:9000")
+    monkeypatch.setenv("S3_REGION", "us-east-1")
+    monkeypatch.setenv("S3_ACCESS_KEY_ID", "minio")
+    monkeypatch.setenv("S3_SECRET_ACCESS_KEY", "minio-secret")
+    monkeypatch.setenv("S3_BUCKET", "receipts")
+    monkeypatch.setenv("S3_USE_SSL", "false")
+    monkeypatch.setenv("S3_FORCE_PATH_STYLE", "true")
+    monkeypatch.setenv("TRANSACTION_RECEIPT_MAX_SIZE_BYTES", "10485760")
     monkeypatch.setenv("AUTH_COOKIE_SECURE", "true")
     monkeypatch.setenv("AUTH_COOKIE_SAMESITE", "strict")
 
@@ -24,6 +32,13 @@ def test_settings_build_database_and_redis_urls(monkeypatch: pytest.MonkeyPatch)
 
     assert settings.database_url == "postgresql+psycopg://postgres:secret@db:5432/shared_expenses"
     assert settings.redis_url == "redis://:redis-secret@redis:6379/1"
+    assert settings.s3_endpoint_url == "http://minio:9000"
+    assert settings.s3_access_key_id.get_secret_value() == "minio"
+    assert settings.s3_secret_access_key.get_secret_value() == "minio-secret"
+    assert settings.s3_bucket == "receipts"
+    assert settings.s3_use_ssl is False
+    assert settings.s3_force_path_style is True
+    assert settings.transaction_receipt_max_size_bytes == 10485760
     assert settings.database_echo is True
     assert settings.auth_cookie_secure is True
     assert settings.auth_cookie_samesite == "strict"

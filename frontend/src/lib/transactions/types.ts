@@ -35,6 +35,7 @@ export type Transaction = {
   amount_minor: number;
   currency: string;
   description: string | null;
+  receipt_url: string | null;
   occurred_at: string;
   split_config: Record<string, unknown> | null;
   source_account: TransactionAccountSummary | null;

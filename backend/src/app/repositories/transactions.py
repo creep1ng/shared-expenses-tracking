@@ -92,6 +92,15 @@ class TransactionRepository:
         self._session.refresh(transaction)
         return transaction
 
+    def update_receipt_url(
+        self, transaction: Transaction, *, receipt_url: str | None
+    ) -> Transaction:
+        transaction.receipt_url = receipt_url
+        self._session.add(transaction)
+        self._session.flush()
+        self._session.refresh(transaction)
+        return transaction
+
     def delete(self, transaction: Transaction) -> None:
         self._session.delete(transaction)
         self._session.flush()

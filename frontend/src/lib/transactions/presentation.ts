@@ -211,3 +211,39 @@ export function getTransactionMetaLabel(transaction: Transaction): string {
 export function formatTransactionOccurredAt(value: string): string {
   return formatDateTime(value);
 }
+
+function getReceiptPathname(receiptUrl: string): string {
+  try {
+    return new URL(receiptUrl, "http://localhost").pathname.toLowerCase();
+  } catch {
+    return receiptUrl.toLowerCase();
+  }
+}
+
+export function getTransactionReceiptKind(receiptUrl: string | null): "image" | "pdf" | "file" | null {
+  if (!receiptUrl) {
+    return null;
+  }
+
+  const normalizedUrl = receiptUrl.trim().toLowerCase();
+
+  if (normalizedUrl.startsWith("data:image/")) {
+    return "image";
+  }
+
+  if (normalizedUrl.startsWith("data:application/pdf")) {
+    return "pdf";
+  }
+
+  const pathname = getReceiptPathname(receiptUrl);
+
+  if (/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(pathname)) {
+    return "image";
+  }
+
+  if (pathname.endsWith(".pdf")) {
+    return "pdf";
+  }
+
+  return "file";
+}

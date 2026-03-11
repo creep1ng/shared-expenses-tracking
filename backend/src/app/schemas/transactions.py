@@ -97,6 +97,7 @@ class TransactionResponse(BaseModel):
     description: str | None
     occurred_at: datetime
     split_config: dict[str, Any] | None
+    receipt_url: str | None
     source_account: TransactionAccountSummary | None
     destination_account: TransactionAccountSummary | None
     category: TransactionCategorySummary | None
@@ -119,3 +120,7 @@ class TransactionResponse(BaseModel):
 
 class TransactionListResponse(BaseModel):
     transactions: list[TransactionResponse]
+
+
+class TransactionReceiptUploadResponse(BaseModel):
+    receipt_url: str | None

@@ -17,11 +17,13 @@ import {
   deleteTransaction,
   getTransaction,
   listTransactions,
+  uploadTransactionReceipt,
   updateTransaction,
 } from "@/lib/transactions/api";
 import {
   formatTransactionAmount,
   formatTransactionOccurredAt,
+  getTransactionReceiptKind,
   getSelectableTransactionAccounts,
   getTransactionHeadline,
   getTransactionMetaLabel,
@@ -185,11 +187,27 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
     setTransactionDetails((currentDetails) => ({ ...currentDetails, [transaction.id]: transaction }));
   }, []);
 
-  const handleCreate = async (payload: TransactionCreatePayload) => {
+  const handleCreate = async (payload: TransactionCreatePayload, receiptFile?: File | null) => {
     setNotice(null);
 
     try {
       const transaction = await createTransaction(workspaceId, payload);
+
+      if (receiptFile) {
+        try {
+          await uploadTransactionReceipt(workspaceId, transaction.id, receiptFile);
+        } catch (error) {
+          syncTransaction(transaction);
+          setNotice({
+            type: "error",
+            message: `Movimiento registrado, pero no se pudo adjuntar el recibo: ${getErrorMessage(error)}`,
+          });
+          await loadPanelData();
+          onTransactionsChanged?.();
+          return true;
+        }
+      }
+
       syncTransaction(transaction);
       setNotice({ type: "success", message: "Movimiento registrado correctamente." });
       await loadPanelData();
@@ -318,6 +336,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
         </div>
         <TransactionForm
           accounts={formAccounts}
+          allowReceiptUpload
           categories={formCategories}
           defaultValues={DEFAULT_TRANSACTION_FORM_VALUES}
           fieldIdPrefix={`transaction-create-${workspaceId}`}
@@ -343,6 +362,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
               const isExpanded = expandedTransactionId === transaction.id;
               const isEditing = editingTransactionId === transaction.id;
               const isLoadingDetail = loadingTransactionId === transaction.id;
+              const receiptKind = getTransactionReceiptKind(detailTransaction.receipt_url);
 
               return (
                 <article key={transaction.id} className="entity-card transaction-card">
@@ -350,6 +370,11 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
                     <div>
                       <div className="workspace-list-topline">
                         <strong>{getTransactionHeadline(transaction)}</strong>
+                        {transaction.receipt_url ? (
+                          <span aria-label="Movimiento con recibo adjunto" title="Movimiento con recibo adjunto">
+                            📎
+                          </span>
+                        ) : null}
                         <span className={`workspace-role-chip transaction-type-chip transaction-type-chip-${transaction.type}`}>
                           {TRANSACTION_TYPE_LABELS[transaction.type]}
                         </span>
@@ -432,6 +457,34 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
                           <div>
                             <dt>Descripcion</dt>
                             <dd>{detailTransaction.description ?? "Sin detalle adicional"}</dd>
+                          </div>
+                          <div>
+                            <dt>Recibo</dt>
+                            <dd>
+                              {detailTransaction.receipt_url ? (
+                                receiptKind === "image" ? (
+                                  <div>
+                                    <a href={detailTransaction.receipt_url} target="_blank" rel="noreferrer">
+                                      Abrir recibo
+                                    </a>
+                                    <img
+                                      src={detailTransaction.receipt_url}
+                                      alt="Recibo adjunto del movimiento"
+                                    />
+                                  </div>
+                                ) : receiptKind === "pdf" ? (
+                                  <a href={detailTransaction.receipt_url} target="_blank" rel="noreferrer">
+                                    Abrir recibo PDF
+                                  </a>
+                                ) : (
+                                  <a href={detailTransaction.receipt_url} target="_blank" rel="noreferrer">
+                                    Descargar recibo
+                                  </a>
+                                )
+                              ) : (
+                                "Sin recibo adjunto"
+                              )}
+                            </dd>
                           </div>
                         </dl>
                       ) : null}
