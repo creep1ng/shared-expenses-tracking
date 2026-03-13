@@ -491,6 +491,108 @@ textarea {
   font-weight: 700;
 }
 
+.dashboard-kpi-panel {
+  display: grid;
+  gap: 1.25rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(150, 103, 224, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(242, 235, 251, 0.9));
+}
+
+.dashboard-kpi-header {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-kpi-copy {
+  max-width: 40rem;
+}
+
+.dashboard-preset-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.dashboard-preset-button {
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(90, 60, 130, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--foreground);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.dashboard-preset-button:hover,
+.dashboard-preset-button-active {
+  border-color: rgba(150, 103, 224, 0.34);
+  background: rgba(235, 217, 252, 0.92);
+  transform: translateY(-1px);
+}
+
+.dashboard-kpi-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.dashboard-kpi-card {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 10.25rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(90, 60, 130, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.dashboard-kpi-card[data-state="available"] {
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.dashboard-kpi-card[data-state="no_data"],
+.dashboard-kpi-card[data-state="mixed_currency"],
+.dashboard-kpi-card[data-state="loading"] {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.dashboard-kpi-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-kpi-value {
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  line-height: 1.05;
+}
+
+.dashboard-kpi-value-default {
+  color: var(--foreground);
+}
+
+.dashboard-kpi-value-positive {
+  color: #1f6b4f;
+}
+
+.dashboard-kpi-value-negative {
+  color: #8d2c22;
+}
+
+.dashboard-kpi-value-muted {
+  color: var(--muted);
+}
+
+.dashboard-kpi-meta {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .entity-section,
 .entity-list,
 .entity-inline-form {
@@ -812,6 +914,15 @@ textarea {
 
   .workspace-dashboard-grid {
     grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.4fr);
+  }
+
+  .dashboard-kpi-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .workspace-stat-grid {

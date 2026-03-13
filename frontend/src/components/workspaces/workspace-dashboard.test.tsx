@@ -5,6 +5,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WorkspaceDashboard } from "@/components/workspaces/workspace-dashboard";
 
+vi.mock("@/components/dashboard/dashboard-kpi-overview", () => ({
+  DashboardKpiOverview: ({
+    workspaceId,
+    refreshNonce,
+  }: {
+    workspaceId: string;
+    refreshNonce?: number;
+  }) => <div>KPIs {workspaceId} refresco {refreshNonce ?? 0}</div>,
+}));
+
 vi.mock("@/components/accounts/accounts-panel", () => ({
   AccountsPanel: ({
     workspaceId,
@@ -154,6 +164,7 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByRole("button", { name: /crear invitacion/i })).toBeInTheDocument();
     expect(screen.getAllByText("owner@example.com")).toHaveLength(2);
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.getByText("KPIs workspace-1 refresco 0")).toBeInTheDocument();
     expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
     expect(screen.getByText("Panel categorias workspace-1")).toBeInTheDocument();
     expect(screen.getByText("Panel movimientos workspace-1")).toBeInTheDocument();
@@ -265,9 +276,11 @@ describe("WorkspaceDashboard", () => {
 
     await screen.findByRole("heading", { name: "Casa" });
     expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
+    expect(screen.getByText("KPIs workspace-1 refresco 0")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /simular cambio de movimientos/i }));
 
+    expect(await screen.findByText("KPIs workspace-1 refresco 1")).toBeInTheDocument();
     expect(await screen.findByText("Panel cuentas workspace-1 refresco 1")).toBeInTheDocument();
     await waitFor(() => {
       expect(getWorkspaceMock).toHaveBeenCalledTimes(2);

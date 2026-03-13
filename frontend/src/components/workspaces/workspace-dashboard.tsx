@@ -7,6 +7,7 @@ import { useEffect, useState, useTransition } from "react";
 
 import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { CategoriesPanel } from "@/components/categories/categories-panel";
+import { DashboardKpiOverview } from "@/components/dashboard/dashboard-kpi-overview";
 import { TransactionsPanel } from "@/components/transactions/transactions-panel";
 import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { WorkspaceInvitationsPanel } from "@/components/workspaces/workspace-invitations-panel";
@@ -314,6 +315,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
               <>
                 {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
                 <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
+                <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
                 <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
                 <CategoriesPanel workspaceId={selectedWorkspace.id} />
                 <TransactionsPanel
