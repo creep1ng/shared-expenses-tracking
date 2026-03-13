@@ -25,12 +25,12 @@ class DashboardKpiQueryParams(BaseModel):
     end_date: date
 
     @model_validator(mode="after")
-    def validate_range(self) -> "DashboardKpiQueryParams":
+    def validate_range(self) -> DashboardKpiQueryParams:
         if self.start_date > self.end_date:
             raise ValueError("start_date must be less than or equal to end_date.")
         return self
 
-    def to_date_range(self) -> "DashboardDateRange":
+    def to_date_range(self) -> DashboardDateRange:
         start_at = datetime.combine(self.start_date, time.min, tzinfo=UTC)
         end_at_exclusive = datetime.combine(self.end_date + timedelta(days=1), time.min, tzinfo=UTC)
         return DashboardDateRange(
