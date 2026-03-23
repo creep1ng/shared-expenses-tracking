@@ -467,6 +467,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
                                     <a href={detailTransaction.receipt_url} target="_blank" rel="noreferrer">
                                       Abrir recibo
                                     </a>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                       src={detailTransaction.receipt_url}
                                       alt="Recibo adjunto del movimiento"
