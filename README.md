@@ -90,7 +90,9 @@ Current workspace foundation implementation:
 Current transaction foundation implementation:
 
 - backend exposes workspace-scoped transaction create, list, detail, update, and delete endpoints
+- backend also exposes transaction-scoped receipt upload and retrieval endpoints
 - a single transaction model covers income, expense, and transfer movements through directional account fields
+- transactions can store one optional receipt through a nullable backend-served `receipt_url`
 - transfers are first-class movements and are excluded from income and expense analytics
 - transaction deletes are hard deletes in the MVP
 - affected account balances are recomputed from transaction history after every transaction write
@@ -114,6 +116,7 @@ Included in MVP:
 - accounts CRUD
 - categories CRUD
 - transactions CRUD
+- single receipt upload per transaction
 - transaction-to-account and transaction-to-category linkage
 - transfers between accounts
 - dashboard base KPI cards
@@ -121,7 +124,7 @@ Included in MVP:
 
 Deferred until post-MVP:
 
-- advanced metadata and receipts
+- advanced transaction metadata
 - budgets and forecasts
 - scheduled payments
 - debt tracking
@@ -197,7 +200,7 @@ The repository now includes the root infrastructure contract for the bootstrap p
 Current scope of this baseline:
 
 - root `Makefile` defining the expected command surface
-- root `docker-compose.yml` with `proxy`, `frontend`, `backend`, `db`, and `redis`
+- root `docker-compose.yml` with `proxy`, `frontend`, `backend`, `db`, `redis`, and `minio`
 - `.env.example` documenting runtime defaults
 - GitHub Actions workflows for pull request validation and preview image publishing
 - nginx reverse proxy config for same-parent-domain routing in local Docker Compose
@@ -229,6 +232,7 @@ The default local Docker topology is:
 - `backend`: FastAPI container behind the reverse proxy
 - `db`: PostgreSQL for application persistence
 - `redis`: Redis for session and short-lived runtime state
+- `minio`: S3-compatible object storage for transaction receipts
 
 Traffic model:
 
@@ -280,6 +284,7 @@ Implemented now:
 - frontend auth helpers and tests for API error handling and sign-in behavior
 - workspace onboarding, roles, invitations, accounts, and categories foundations
 - transactions and transfers foundation with directional account modeling and balance recomputation
+- transaction receipt upload from the create form with backend-served `receipt_url` values backed by local MinIO/S3-compatible storage
 
 Not implemented yet:
 

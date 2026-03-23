@@ -102,7 +102,7 @@ format:
 
 typecheck:
 	@if [ -d "$(BACKEND_DIR)" ] && [ -f "$(BACKEND_DIR)/pyproject.toml" ]; then \
-		uv run --project "$(BACKEND_DIR)" mypy .; \
+		cd "$(BACKEND_DIR)" && uv run mypy src; \
 	else \
 		printf "Skipping backend typecheck: backend project not scaffolded yet\n"; \
 	fi

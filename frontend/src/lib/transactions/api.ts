@@ -28,6 +28,20 @@ export function createTransaction(
   });
 }
 
+export function uploadTransactionReceipt(
+  workspaceId: string,
+  transactionId: string,
+  file: File,
+): Promise<void> {
+  const formData = new FormData();
+  formData.append("receipt", file);
+
+  return requestVoid(`/workspaces/${workspaceId}/transactions/${transactionId}/receipt`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export function updateTransaction(
   workspaceId: string,
   transactionId: string,

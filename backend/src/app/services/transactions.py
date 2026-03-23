@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar
 from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import Settings
+from app.core.storage import ObjectStorage, ObjectStorageNotFoundError, StoredObject
 from app.db.models import (
     Account,
     Category,
@@ -38,10 +40,36 @@ class TransactionWriteData:
     split_config: dict[str, object] | None
 
 
+@dataclass(frozen=True)
+class TransactionReceiptUpload:
+    content: bytes
+    content_type: str
+
+
+@dataclass(frozen=True)
+class TransactionReceiptContent:
+    content: bytes
+    content_type: str
+
+
 class TransactionService:
-    def __init__(self, session: Session, workspace_service: WorkspaceService) -> None:
+    _ALLOWED_RECEIPT_CONTENT_TYPES: ClassVar[dict[str, str]] = {
+        "image/png": ".png",
+        "image/jpeg": ".jpg",
+        "application/pdf": ".pdf",
+    }
+
+    def __init__(
+        self,
+        session: Session,
+        workspace_service: WorkspaceService,
+        settings: Settings,
+        object_storage: ObjectStorage,
+    ) -> None:
         self._session = session
         self._workspace_service = workspace_service
+        self._settings = settings
+        self._object_storage = object_storage
         self._transactions = TransactionRepository(session)
         self._accounts = AccountRepository(session)
         self._categories = CategoryRepository(session)
@@ -199,6 +227,7 @@ class TransactionService:
         transaction = self._get_transaction_or_404(
             workspace_id=workspace_id, transaction_id=transaction_id
         )
+        receipt_key = self._get_receipt_object_key(transaction.receipt_url)
         affected_account_ids = self._collect_account_ids(transaction=transaction)
         self._transactions.delete(transaction)
         self._recompute_account_balances(
@@ -206,6 +235,113 @@ class TransactionService:
             account_ids=affected_account_ids,
         )
         self._session.commit()
+        if receipt_key is not None:
+            try:
+                self._object_storage.delete_object(key=receipt_key)
+            except ObjectStorageNotFoundError:
+                pass
+
+    def upload_receipt(
+        self,
+        *,
+        workspace_id: UUID,
+        transaction_id: UUID,
+        current_user: User,
+        upload: TransactionReceiptUpload,
+    ) -> Transaction:
+        self._workspace_service.get_workspace_access(
+            workspace_id=workspace_id,
+            current_user=current_user,
+        )
+        transaction = self._get_transaction_or_404(
+            workspace_id=workspace_id,
+            transaction_id=transaction_id,
+        )
+        extension = self._validate_receipt_upload(upload)
+        object_key = self._build_receipt_object_key(
+            workspace_id=workspace_id,
+            transaction_id=transaction_id,
+            extension=extension,
+        )
+        receipt_url = self._build_receipt_url(
+            workspace_id=workspace_id,
+            transaction_id=transaction_id,
+            extension=extension,
+        )
+        previous_key = self._get_receipt_object_key(transaction.receipt_url)
+        previous_receipt_url = transaction.receipt_url
+
+        self._transactions.update_receipt_url(transaction, receipt_url=receipt_url)
+        self._session.commit()
+
+        try:
+            self._object_storage.put_object(
+                key=object_key,
+                content=upload.content,
+                content_type=upload.content_type,
+            )
+        except Exception:
+            self._session.rollback()
+            self._transactions.update_receipt_url(transaction, receipt_url=previous_receipt_url)
+            self._session.commit()
+            raise
+
+        if previous_key is not None and previous_key != object_key:
+            try:
+                self._object_storage.delete_object(key=previous_key)
+            except ObjectStorageNotFoundError:
+                pass
+
+        return self._get_transaction_or_404(
+            workspace_id=workspace_id,
+            transaction_id=transaction_id,
+        )
+
+    def get_receipt_content(
+        self,
+        *,
+        workspace_id: UUID,
+        transaction_id: UUID,
+        filename: str,
+        current_user: User,
+    ) -> TransactionReceiptContent:
+        self._workspace_service.get_workspace_access(
+            workspace_id=workspace_id,
+            current_user=current_user,
+        )
+        transaction = self._get_transaction_or_404(
+            workspace_id=workspace_id,
+            transaction_id=transaction_id,
+        )
+        if transaction.receipt_url is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found.",
+            )
+
+        expected_filename = transaction.receipt_url.rsplit("/", maxsplit=1)[-1]
+        if filename != expected_filename:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found.",
+            )
+
+        object_key = self._get_receipt_object_key(transaction.receipt_url)
+        if object_key is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found.",
+            )
+
+        try:
+            stored_object = self._object_storage.get_object(key=object_key)
+        except ObjectStorageNotFoundError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Receipt not found.",
+            ) from exc
+
+        return self._build_receipt_content(stored_object)
 
     def _validate_write_data(
         self,
@@ -283,6 +419,64 @@ class TransactionService:
             description=description,
             occurred_at=occurred_at,
             split_config=split_config,
+        )
+
+    def _validate_receipt_upload(self, upload: TransactionReceiptUpload) -> str:
+        extension = self._ALLOWED_RECEIPT_CONTENT_TYPES.get(upload.content_type)
+        if extension is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Unsupported receipt media type. Allowed types: "
+                    "image/png, image/jpeg, application/pdf."
+                ),
+            )
+        if len(upload.content) > self._settings.transaction_receipt_max_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Receipt exceeds the 10 MB size limit.",
+            )
+        return extension
+
+    def _build_receipt_object_key(
+        self,
+        *,
+        workspace_id: UUID,
+        transaction_id: UUID,
+        extension: str,
+    ) -> str:
+        return f"workspaces/{workspace_id}/transactions/{transaction_id}/receipt{extension}"
+
+    def _build_receipt_url(
+        self,
+        *,
+        workspace_id: UUID,
+        transaction_id: UUID,
+        extension: str,
+    ) -> str:
+        return (
+            f"{self._settings.api_v1_prefix}/workspaces/{workspace_id}/transactions/"
+            f"{transaction_id}/receipt/receipt{extension}"
+        )
+
+    @staticmethod
+    def _get_receipt_object_key(receipt_url: str | None) -> str | None:
+        if receipt_url is None:
+            return None
+        if "/receipt/" not in receipt_url or "/transactions/" not in receipt_url:
+            return None
+        filename = receipt_url.rsplit("/", maxsplit=1)[-1]
+        transaction_segment = receipt_url.rsplit("/receipt/", maxsplit=1)[0]
+        transaction_id = transaction_segment.rsplit("/", maxsplit=1)[-1]
+        workspace_segment = transaction_segment.rsplit("/transactions/", maxsplit=1)[0]
+        workspace_id = workspace_segment.rsplit("/", maxsplit=1)[-1]
+        return f"workspaces/{workspace_id}/transactions/{transaction_id}/{filename}"
+
+    @staticmethod
+    def _build_receipt_content(stored_object: StoredObject) -> TransactionReceiptContent:
+        return TransactionReceiptContent(
+            content=stored_object.content,
+            content_type=stored_object.content_type,
         )
 
     def _validate_transaction_constraints(

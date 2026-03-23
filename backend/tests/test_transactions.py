@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.dependencies.auth import _TEST_REDIS
+from app.api.dependencies.transactions import _TEST_OBJECT_STORAGE
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db_session
@@ -33,6 +34,14 @@ def transactions_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Gene
     monkeypatch.setenv("REDIS_PORT", "6379")
     monkeypatch.setenv("REDIS_DB", "0")
     monkeypatch.setenv("REDIS_PASSWORD", "")
+    monkeypatch.setenv("S3_ENDPOINT_URL", "http://localhost:9000")
+    monkeypatch.setenv("S3_REGION", "us-east-1")
+    monkeypatch.setenv("S3_ACCESS_KEY_ID", "minioadmin")
+    monkeypatch.setenv("S3_SECRET_ACCESS_KEY", "minioadmin")
+    monkeypatch.setenv("S3_BUCKET", "transaction-receipts-test")
+    monkeypatch.setenv("S3_USE_SSL", "false")
+    monkeypatch.setenv("S3_FORCE_PATH_STYLE", "true")
+    monkeypatch.setenv("TRANSACTION_RECEIPT_MAX_SIZE_BYTES", str(10 * 1024 * 1024))
     monkeypatch.setenv("AUTH_COOKIE_SECURE", "false")
     monkeypatch.setenv("WORKSPACE_INVITATION_TTL_SECONDS", "3600")
 
@@ -42,6 +51,7 @@ def transactions_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Gene
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     Base.metadata.create_all(engine)
     _TEST_REDIS._values.clear()
+    _TEST_OBJECT_STORAGE.clear()
 
     app = create_app(settings)
 
@@ -473,6 +483,167 @@ def test_occurred_at_must_be_timezone_aware(transactions_client: TestClient) -> 
     assert "occurred_at must be timezone-aware" in response.json()["detail"][0]["msg"]
 
 
+def test_member_can_upload_and_fetch_transaction_receipt(
+    transactions_client: TestClient,
+) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Recibos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Banco",
+        account_type="bank_account",
+        currency="ARS",
+        initial_balance_minor=1000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Salario")
+    transaction = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "income",
+            "destination_account_id": account["id"],
+            "category_id": category["id"],
+            "amount_minor": 100,
+            "currency": "ARS",
+            "description": "Con recibo",
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    ).json()
+
+    upload_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}/receipt",
+        files={"receipt": ("ticket.png", b"png-bytes", "image/png")},
+    )
+
+    assert upload_response.status_code == 201
+    receipt_url = upload_response.json()["receipt_url"]
+    assert (
+        receipt_url == "/api/v1/workspaces/"
+        f"{workspace['id']}/transactions/{transaction['id']}/receipt/receipt.png"
+    )
+
+    transaction_detail_response = owner_client.get(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}"
+    )
+    assert transaction_detail_response.status_code == 200
+    assert transaction_detail_response.json()["receipt_url"] == receipt_url
+
+    receipt_response = owner_client.get(receipt_url)
+    assert receipt_response.status_code == 200
+    assert receipt_response.headers["content-type"] == "image/png"
+    assert receipt_response.content == b"png-bytes"
+
+
+def test_receipt_reupload_replaces_previous_object(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Recibos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=1000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    transaction = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "amount_minor": 100,
+            "currency": "ARS",
+            "description": "Con recibo",
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    ).json()
+
+    first_upload_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}/receipt",
+        files={"receipt": ("ticket.png", b"first", "image/png")},
+    )
+    assert first_upload_response.status_code == 201
+    first_receipt_url = first_upload_response.json()["receipt_url"]
+
+    second_upload_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}/receipt",
+        files={"receipt": ("ticket.pdf", b"%PDF-1.7", "application/pdf")},
+    )
+    assert second_upload_response.status_code == 201
+    second_receipt_url = second_upload_response.json()["receipt_url"]
+    assert second_receipt_url != first_receipt_url
+    assert second_receipt_url.endswith("receipt.pdf")
+
+    old_receipt_response = owner_client.get(first_receipt_url)
+    new_receipt_response = owner_client.get(second_receipt_url)
+    transaction_detail_response = owner_client.get(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}"
+    )
+
+    assert old_receipt_response.status_code == 404
+    assert old_receipt_response.json() == {"detail": "Receipt not found."}
+    assert new_receipt_response.status_code == 200
+    assert new_receipt_response.headers["content-type"] == "application/pdf"
+    assert new_receipt_response.content == b"%PDF-1.7"
+    assert transaction_detail_response.json()["receipt_url"] == second_receipt_url
+
+
+def test_receipt_upload_rejects_invalid_media_type_and_size(
+    transactions_client: TestClient,
+) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Recibos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Banco",
+        account_type="bank_account",
+        currency="ARS",
+        initial_balance_minor=1000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Salario")
+    transaction = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "income",
+            "destination_account_id": account["id"],
+            "category_id": category["id"],
+            "amount_minor": 100,
+            "currency": "ARS",
+            "description": None,
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    ).json()
+
+    invalid_media_type_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}/receipt",
+        files={"receipt": ("ticket.gif", b"gif", "image/gif")},
+    )
+    assert invalid_media_type_response.status_code == 422
+    assert invalid_media_type_response.json() == {
+        "detail": (
+            "Unsupported receipt media type. Allowed types: image/png, image/jpeg, application/pdf."
+        )
+    }
+
+    oversized_receipt_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}/receipt",
+        files={
+            "receipt": (
+                "ticket.pdf",
+                b"x" * (10 * 1024 * 1024 + 1),
+                "application/pdf",
+            )
+        },
+    )
+    assert oversized_receipt_response.status_code == 413
+    assert oversized_receipt_response.json() == {"detail": "Receipt exceeds the 10 MB size limit."}
+
+
 def _sign_up_and_sign_in(client: TestClient, email: str) -> TestClient:
     session_client = TestClient(cast(FastAPI, client.app))
     response = session_client.post(
@@ -494,7 +665,7 @@ def _create_workspace(client: TestClient, *, name: str, workspace_type: str) -> 
         json={"name": name, "type": workspace_type},
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, str], response.json())
 
 
 def _create_invitation(client: TestClient, *, workspace_id: str, email: str) -> dict[str, str]:
@@ -503,7 +674,7 @@ def _create_invitation(client: TestClient, *, workspace_id: str, email: str) -> 
         json={"email": email},
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, str], response.json())
 
 
 def _create_account(
@@ -527,7 +698,7 @@ def _create_account(
         },
     )
     assert response.status_code == 201
-    return response.json()
+    return cast(dict[str, object], response.json())
 
 
 def _find_category_by_name(
@@ -537,5 +708,5 @@ def _find_category_by_name(
     assert response.status_code == 200
     for category in response.json()["categories"]:
         if category["name"] == name:
-            return category
+            return cast(dict[str, object], category)
     raise AssertionError(f"Category {name!r} not found")

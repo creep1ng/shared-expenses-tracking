@@ -422,6 +422,7 @@ class Transaction(TimestampMixin, Base):
         DateTime(timezone=True), nullable=False, index=True
     )
     split_config: Mapped[dict[str, object] | None] = mapped_column(JSON(), nullable=True)
+    receipt_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     workspace: Mapped[Workspace] = relationship(back_populates="transactions")
     source_account: Mapped[Account | None] = relationship(

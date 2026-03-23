@@ -9,6 +9,7 @@ const createTransactionMock = vi.fn();
 const deleteTransactionMock = vi.fn();
 const getTransactionMock = vi.fn();
 const listTransactionsMock = vi.fn();
+const uploadTransactionReceiptMock = vi.fn();
 const updateTransactionMock = vi.fn();
 const listAccountsMock = vi.fn();
 const listCategoriesMock = vi.fn();
@@ -18,6 +19,7 @@ vi.mock("@/lib/transactions/api", () => ({
   deleteTransaction: (...args: unknown[]) => deleteTransactionMock(...args),
   getTransaction: (...args: unknown[]) => getTransactionMock(...args),
   listTransactions: (...args: unknown[]) => listTransactionsMock(...args),
+  uploadTransactionReceipt: (...args: unknown[]) => uploadTransactionReceiptMock(...args),
   updateTransaction: (...args: unknown[]) => updateTransactionMock(...args),
 }));
 
@@ -98,6 +100,7 @@ const incomeTransaction = {
   amount_minor: 250000,
   currency: "EUR",
   description: "Nomina marzo",
+  receipt_url: null,
   occurred_at: "2026-03-10T08:00:00Z",
   split_config: null,
   source_account: null,
@@ -134,6 +137,7 @@ const transferTransaction = {
   amount_minor: 5000,
   currency: "EUR",
   description: "Traspaso ahorro",
+  receipt_url: "https://cdn.example.com/receipts/transferencia.pdf",
   occurred_at: "2026-03-11T09:30:00Z",
   split_config: null,
   source_account: {
@@ -178,6 +182,7 @@ describe("TransactionsPanel", () => {
     deleteTransactionMock.mockReset();
     getTransactionMock.mockReset();
     listTransactionsMock.mockReset();
+    uploadTransactionReceiptMock.mockReset();
     updateTransactionMock.mockReset();
     listAccountsMock.mockReset();
     listCategoriesMock.mockReset();
@@ -202,7 +207,7 @@ describe("TransactionsPanel", () => {
     expect(within(cards[1]).getByText("Ingreso")).toBeInTheDocument();
   });
 
-  it("creates an expense and keeps backend payload shape", async () => {
+  it("creates an expense, uploads the receipt and keeps backend payload shape", async () => {
     const user = userEvent.setup();
     const onTransactionsChanged = vi.fn();
     const today = new Date();
@@ -217,6 +222,7 @@ describe("TransactionsPanel", () => {
       category_id: "cat-2",
       amount_minor: 1250,
       description: "Cafe oficina",
+      receipt_url: null,
       occurred_at: validDate.toISOString(),
       source_account: incomeTransaction.destination_account,
       destination_account: null,
@@ -230,6 +236,38 @@ describe("TransactionsPanel", () => {
       },
     });
 
+    listTransactionsMock
+      .mockResolvedValueOnce({ transactions: [transferTransaction, incomeTransaction] })
+      .mockResolvedValueOnce({
+        transactions: [
+          {
+            ...incomeTransaction,
+            id: "tx-3",
+            type: "expense" as const,
+            source_account_id: "acc-1",
+            destination_account_id: null,
+            category_id: "cat-2",
+            amount_minor: 1250,
+            description: "Cafe oficina",
+            receipt_url: "https://cdn.example.com/receipts/cafe-oficina.jpg",
+            occurred_at: validDate.toISOString(),
+            source_account: incomeTransaction.destination_account,
+            destination_account: null,
+            category: {
+              id: "cat-2",
+              workspace_id: "workspace-1",
+              name: "Supermercado",
+              type: "expense" as const,
+              archived_at: null,
+              is_archived: false,
+            },
+          },
+          transferTransaction,
+          incomeTransaction,
+        ],
+      });
+    uploadTransactionReceiptMock.mockResolvedValue(undefined);
+
     render(<TransactionsPanel workspaceId="workspace-1" onTransactionsChanged={onTransactionsChanged} />);
 
     await screen.findByText("Traspaso ahorro");
@@ -242,6 +280,8 @@ describe("TransactionsPanel", () => {
     await user.type(screen.getByLabelText(/^Descripcion$/i), "Cafe oficina");
     await user.clear(screen.getByLabelText(/^Fecha y hora$/i));
     await user.type(screen.getByLabelText(/^Fecha y hora$/i), formatDateForInput(validDate));
+    const receiptFile = new File(["receipt"], "cafe-oficina.jpg", { type: "image/jpeg" });
+    await user.upload(screen.getByLabelText(/^Adjuntar recibo$/i), receiptFile);
     await user.click(screen.getByRole("button", { name: /guardar movimiento/i }));
 
     await waitFor(() => {
@@ -259,7 +299,50 @@ describe("TransactionsPanel", () => {
       });
     });
 
+    await waitFor(() => {
+      expect(uploadTransactionReceiptMock).toHaveBeenCalledWith("workspace-1", "tx-3", receiptFile);
+    });
+
     expect(onTransactionsChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows receipt indicators and renders image preview or PDF link in detail", async () => {
+    const user = userEvent.setup();
+
+    const imageTransaction = {
+      ...incomeTransaction,
+      receipt_url: "https://cdn.example.com/receipts/nomina-marzo.jpeg?download=1",
+    };
+
+    listTransactionsMock.mockResolvedValue({ transactions: [transferTransaction, imageTransaction] });
+    getTransactionMock.mockImplementation(async (_workspaceId: string, transactionId: string) =>
+      transactionId === "tx-2" ? transferTransaction : imageTransaction,
+    );
+
+    render(<TransactionsPanel workspaceId="workspace-1" />);
+
+    const incomeCard = (await screen.findByText("Nomina marzo")).closest("article");
+    const transferCard = screen.getByText("Traspaso ahorro").closest("article");
+
+    expect(incomeCard).not.toBeNull();
+    expect(transferCard).not.toBeNull();
+    expect(within(incomeCard as HTMLElement).getByLabelText(/movimiento con recibo adjunto/i)).toBeInTheDocument();
+    expect(within(transferCard as HTMLElement).getByLabelText(/movimiento con recibo adjunto/i)).toBeInTheDocument();
+
+    await user.click(within(incomeCard as HTMLElement).getByRole("button", { name: /ver detalle/i }));
+
+    expect(await screen.findByAltText("Recibo adjunto del movimiento")).toHaveAttribute(
+      "src",
+      imageTransaction.receipt_url,
+    );
+    expect(screen.getByRole("link", { name: /^abrir recibo$/i })).toHaveAttribute("href", imageTransaction.receipt_url);
+
+    await user.click(within(transferCard as HTMLElement).getByRole("button", { name: /ver detalle/i }));
+
+    expect(await screen.findByRole("link", { name: /abrir recibo pdf/i })).toHaveAttribute(
+      "href",
+      transferTransaction.receipt_url,
+    );
   });
 
   it("loads detail inline and edits an existing transaction", async () => {

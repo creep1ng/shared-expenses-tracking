@@ -4,7 +4,7 @@
 
 This document captures the key end-to-end flows that define the application's behavior.
 
-Authentication, workspace, account/category prerequisites, and transaction flows below reflect the current implementation. Shared-expense split and settle-up flows remain target-state and should be refined as those issues land.
+Authentication, workspace, account/category prerequisites, transaction flows, and receipt handling below reflect the current implementation. Shared-expense split and settle-up flows remain target-state and should be refined as those issues land.
 
 ## 1. Sign up flow
 
@@ -172,7 +172,38 @@ sequenceDiagram
     Frontend-->>User: Show success and refreshed list/KPIs
 ```
 
-## 9. Shared expense split flow
+## 9. Transaction receipt flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant Backend as FastAPI Backend
+    participant DB as PostgreSQL
+    participant ObjectStorage as MinIO / S3-compatible Storage
+
+    User->>Frontend: Attach receipt to an existing transaction
+    Frontend->>Backend: POST /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt
+    Backend->>Backend: Validate session, workspace access, transaction existence, and upload constraints
+    Backend->>ObjectStorage: Upload or replace receipt object
+    Backend->>DB: Update transaction.receipt_url
+    Backend-->>Frontend: Return transaction with stable receipt_url
+    Frontend-->>User: Show linked receipt state in the transaction UI
+
+    User->>Frontend: Open stored receipt
+    Frontend->>Backend: GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt/{filename}
+    Backend->>Backend: Validate session, workspace access, and transaction linkage
+    Backend->>ObjectStorage: Load receipt object
+    Backend-->>Frontend: Stream receipt content
+    Frontend-->>User: Display or download the receipt
+```
+
+Notes:
+
+- receipt upload is allowed for income, expense, and transfer transactions
+- each transaction stores at most one receipt and replacing it keeps the transaction-linked `receipt_url` current
+
+## 10. Shared expense split flow
 
 ```mermaid
 sequenceDiagram
@@ -194,10 +225,11 @@ Notes:
 
 - transaction reads now live at `GET /api/v1/workspaces/{workspace_id}/transactions` and `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}`
 - transaction writes use `POST`, `PATCH`, and `DELETE` on the same workspace-scoped collection and item routes
+- receipt writes and reads use `POST /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt` and `GET /api/v1/workspaces/{workspace_id}/transactions/{transaction_id}/receipt/{filename}`
 - transaction deletion is a hard delete in the MVP and then triggers balance recomputation for the affected accounts
 - transfer validation requires different active accounts in the same workspace and the same currency on both accounts and the transaction payload
 
-## 10. Settle-up flow
+## 11. Settle-up flow
 
 ```mermaid
 sequenceDiagram
@@ -257,7 +289,6 @@ sequenceDiagram
 As new features are introduced, add sequence or flow diagrams for:
 
 - invitation acceptance
-- receipt upload
 - scheduled payment generation
 - budget status recomputation
 - forecast generation
