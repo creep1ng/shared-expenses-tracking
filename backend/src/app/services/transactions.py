@@ -110,11 +110,17 @@ class TransactionService:
             workspace_id=workspace_id, transaction_id=transaction.id
         )
 
-    def list_transactions(self, *, workspace_id: UUID, current_user: User) -> list[Transaction]:
+    def list_transactions(
+        self, *, workspace_id: UUID, current_user: User, filter_user_id: UUID | None = None
+    ) -> list[Transaction]:
         self._workspace_service.get_workspace_access(
             workspace_id=workspace_id,
             current_user=current_user,
         )
+        if filter_user_id is not None:
+            return self._transactions.list_by_workspace_and_user(
+                workspace_id=workspace_id, user_id=filter_user_id
+            )
         return self._transactions.list_by_workspace(workspace_id=workspace_id)
 
     def get_transaction(
@@ -363,7 +369,12 @@ class TransactionService:
         currency = self._normalize_currency(str(payload["currency"]))
         description = self._normalize_description(payload.get("description"))
         occurred_at = self._normalize_occurred_at(payload["occurred_at"])
-        split_config = self._normalize_split_config(payload.get("split_config"))
+        split_config = self._normalize_split_config(
+            payload.get("split_config"),
+            workspace_id=workspace_id,
+            amount_minor=amount_minor,
+            paid_by_user_id=paid_by_user_id,
+        )
 
         account_ids = {
             account_id
@@ -631,9 +642,117 @@ class TransactionService:
             )
         return occurred_at.astimezone(UTC)
 
-    @staticmethod
-    def _normalize_split_config(split_config: dict[str, object] | None) -> dict[str, object] | None:
-        return split_config
+    def _normalize_split_config(
+        self,
+        split_config: dict[str, object] | None,
+        *,
+        workspace_id: UUID,
+        amount_minor: int,
+        paid_by_user_id: UUID | None,
+    ) -> dict[str, object] | None:
+        if split_config is None:
+            return None
+
+        split_type = split_config.get("type")
+        if split_type not in ("equal", "percentage", "exact"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="split_config.type must be one of: equal, percentage, exact.",
+            )
+
+        if paid_by_user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="paid_by_user_id is required when split_config is provided.",
+            )
+
+        raw_values = split_config.get("values")
+        if raw_values is not None and not isinstance(raw_values, dict):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="split_config.values must be a dict mapping user UUIDs to integers.",
+            )
+
+        values: dict[str, int] = {}
+        if raw_values is not None:
+            for key, value in raw_values.items():
+                try:
+                    UUID(str(key))
+                except ValueError as err:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"split_config.values key {key!r} is not a valid UUID.",
+                    ) from err
+                if not isinstance(value, int):
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=f"split_config.values[{key}] must be an integer.",
+                    )
+                values[str(key)] = value
+
+        # Validate all referenced users are workspace members
+        for user_id_str in values:
+            member_uuid = UUID(user_id_str)
+            membership = self._members.get_for_user(workspace_id=workspace_id, user_id=member_uuid)
+            if membership is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=(
+                        f"split_config references user {user_id_str} "
+                        "who is not a member of this workspace."
+                    ),
+                )
+
+        if split_type == "percentage":
+            if not values:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Percentage split requires values.",
+                )
+            paid_by_str = str(paid_by_user_id)
+            if paid_by_str not in values:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="paid_by_user_id must be a participant in percentage split values.",
+                )
+            for user_id_str, pct in values.items():
+                if pct < 0 or pct > 100:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=(f"split_config.values[{user_id_str}] must be between 0 and 100."),
+                    )
+            if sum(values.values()) != 100:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Percentage split values must sum to 100.",
+                )
+
+        elif split_type == "exact":
+            if not values:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Exact split requires values.",
+                )
+            paid_by_str = str(paid_by_user_id)
+            if paid_by_str not in values:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="paid_by_user_id must be a participant in exact split values.",
+                )
+            for user_id_str, amount in values.items():
+                if amount <= 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=(f"split_config.values[{user_id_str}] must be greater than zero."),
+                    )
+            if sum(values.values()) != amount_minor:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(f"Exact split values must sum to {amount_minor}."),
+                )
+
+        # For "equal" type, values are optional/ignored
+        return {"type": split_type, "values": values or None}
 
     @staticmethod
     def _ensure_account_currency_matches(*, account: Account, currency: str) -> None:

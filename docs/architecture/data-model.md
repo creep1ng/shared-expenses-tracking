@@ -115,6 +115,8 @@ For shared-expense support, transactions should be able to store:
 - transfers must not count as standard income or expense in analytics
 - each transaction can link to at most one stored receipt object
 - money values are stored in integer minor units
+- net balances are derived from split-configured expense transactions, not stored separately
+- transfers are excluded from net balance computation
 
 ## Initial ER diagram
 
@@ -250,4 +252,35 @@ Those additions should be layered onto the core model rather than forcing a rede
 - receipt upload is allowed for income, expense, and transfer transactions
 - receipt binaries live in S3-compatible object storage and are streamed back through backend routes
 - `split_config` is nullable JSON reserved for shared-expense flows
+- `split_config` structure when present:
+  ```json
+  {
+    "type": "equal" | "percentage" | "exact",
+    "values": {"<user-uuid>": <int>, ...}
+  }
+  ```
+  - `equal`: values dict is optional; participants split the amount equally
+  - `percentage`: each value is 0–100, all must sum to 100
+  - `exact`: each value is >0, all must sum to `amount_minor`
+  - `paid_by_user_id` must be present when `split_config` is set
+  - all user UUIDs in values must reference workspace members
 - account `current_balance_minor` is recomputed from transaction history after every transaction create, update, and hard delete
+
+## Net balance computation
+
+Net balances are derived from transaction history, not stored as a separate table.
+
+Computation rules:
+
+- only expense transactions with `split_config` and `paid_by_user_id` contribute to net balances
+- each participant in `split_config.values` owes the payer their computed share
+- bilateral debts are netted: if A owes B 5000 and B owes A 3000, the net result is A owes B 2000
+- transfers are excluded from net balance computation
+- net balances are per-currency; no cross-currency netting is performed
+- the net balance endpoint accepts an optional `user_id` filter to return only entries involving a specific user
+
+Share computation by split type:
+
+- **equal**: amount divided equally among all participants in values, with remainder distributed to first participants
+- **percentage**: `amount_minor * percentage / 100` for each participant
+- **exact**: the value assigned to each participant is used directly

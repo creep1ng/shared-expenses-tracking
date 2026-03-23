@@ -40,12 +40,14 @@ def create_transaction(
 @router.get("", response_model=TransactionListResponse)
 def list_transactions(
     workspace_id: UUID,
+    user_id: UUID | None = None,
     current_user: User = Depends(get_current_user),
     transaction_service: TransactionService = Depends(get_transaction_service),
 ) -> TransactionListResponse:
     transactions = transaction_service.list_transactions(
         workspace_id=workspace_id,
         current_user=current_user,
+        filter_user_id=user_id,
     )
     return TransactionListResponse(
         transactions=[_build_transaction_response(transaction) for transaction in transactions]

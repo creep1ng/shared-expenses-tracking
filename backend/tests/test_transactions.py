@@ -114,7 +114,7 @@ def test_member_can_create_list_get_update_and_delete_income_transaction(
             "currency": "ars",
             "description": "Sueldo marzo",
             "occurred_at": "2026-03-10T12:00:00Z",
-            "split_config": {"kind": "solo"},
+            "split_config": None,
         },
     )
     assert create_response.status_code == 201
@@ -128,7 +128,7 @@ def test_member_can_create_list_get_update_and_delete_income_transaction(
     assert transaction["destination_account"]["id"] == destination_account["id"]
     assert transaction["category"]["name"] == "Salario"
     assert transaction["paid_by_user"]["email"] == "member@example.com"
-    assert transaction["split_config"] == {"kind": "solo"}
+    assert transaction["split_config"] is None
 
     detail_response = member_client.get(
         f"/api/v1/workspaces/{workspace['id']}/transactions/{transaction['id']}"
@@ -642,6 +642,442 @@ def test_receipt_upload_rejects_invalid_media_type_and_size(
     )
     assert oversized_receipt_response.status_code == 413
     assert oversized_receipt_response.json() == {"detail": "Receipt exceeds the 10 MB size limit."}
+
+
+def test_split_config_rejects_invalid_type(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "amount_minor": 5000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {"type": "invalid", "values": {}},
+        },
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert "split_config.type" in detail or "type" in str(detail)
+
+
+def test_split_config_requires_paid_by_user_id(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "amount_minor": 5000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {"type": "equal"},
+        },
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert "paid_by_user_id" in detail
+
+
+def test_percentage_split_must_sum_to_100(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "percentage",
+                "values": {owner_id: 60, member_id: 30},
+            },
+        },
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert "100" in detail or "sum" in detail.lower()
+
+
+def test_percentage_split_values_must_be_0_to_100(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "percentage",
+                "values": {owner_id: 50, member_id: 150},
+            },
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_exact_split_must_sum_to_amount(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "exact",
+                "values": {owner_id: 6000, member_id: 3000},
+            },
+        },
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert "10000" in detail or "sum" in detail.lower()
+
+
+def test_exact_split_values_must_be_positive(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "exact",
+                "values": {owner_id: 0, member_id: 10000},
+            },
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_split_config_rejects_non_member_user(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    non_member_id = "00000000-0000-0000-0000-000000000001"
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "percentage",
+                "values": {owner_id: 50, non_member_id: 50},
+            },
+        },
+    )
+    assert response.status_code == 404
+    detail = response.json()["detail"]
+    assert "member" in detail.lower() or "workspace" in detail.lower()
+
+
+def test_valid_equal_split_accepted(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "equal",
+                "values": {owner_id: 1, member_id: 1},
+            },
+        },
+    )
+    assert response.status_code == 201
+    transaction = response.json()
+    assert transaction["split_config"]["type"] == "equal"
+    assert owner_id in transaction["split_config"]["values"]
+    assert member_id in transaction["split_config"]["values"]
+
+
+def test_valid_percentage_split_accepted(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "percentage",
+                "values": {owner_id: 60, member_id: 40},
+            },
+        },
+    )
+    assert response.status_code == 201
+    transaction = response.json()
+    assert transaction["split_config"]["type"] == "percentage"
+
+
+def test_valid_exact_split_accepted(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    member_client = _sign_up_and_sign_in(transactions_client, "member@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="shared")
+    invitation = _create_invitation(
+        owner_client,
+        workspace_id=workspace["id"],
+        email="member@example.com",
+    )
+    member_client.post(
+        "/api/v1/workspaces/invitations/accept",
+        json={"token": invitation["invitation_token"]},
+    )
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    category = _find_category_by_name(owner_client, workspace_id=workspace["id"], name="Comida")
+    owner_id = owner_client.get("/api/v1/auth/me").json()["user"]["id"]
+    member_id = member_client.get("/api/v1/auth/me").json()["user"]["id"]
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": category["id"],
+            "paid_by_user_id": owner_id,
+            "amount_minor": 10000,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T12:00:00Z",
+            "split_config": {
+                "type": "exact",
+                "values": {owner_id: 6000, member_id: 4000},
+            },
+        },
+    )
+    assert response.status_code == 201
+    transaction = response.json()
+    assert transaction["split_config"]["type"] == "exact"
 
 
 def _sign_up_and_sign_in(client: TestClient, email: str) -> TestClient:
