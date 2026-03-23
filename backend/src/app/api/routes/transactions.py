@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.transactions import get_transaction_service
@@ -111,7 +111,10 @@ async def upload_transaction_receipt(
     current_user: User = Depends(get_current_user),
     transaction_service: TransactionService = Depends(get_transaction_service),
 ) -> TransactionReceiptUploadResponse:
-    content = await receipt.read()
+    content = await _read_upload_file_chunked(
+        receipt=receipt,
+        max_size_bytes=transaction_service._settings.transaction_receipt_max_size_bytes,
+    )
     transaction = transaction_service.upload_receipt(
         workspace_id=workspace_id,
         transaction_id=transaction_id,
@@ -122,6 +125,25 @@ async def upload_transaction_receipt(
         ),
     )
     return TransactionReceiptUploadResponse(receipt_url=transaction.receipt_url)
+
+
+async def _read_upload_file_chunked(
+    receipt: UploadFile,
+    max_size_bytes: int,
+    chunk_size: int = 64 * 1024,
+) -> bytes:
+    content = bytearray()
+    while True:
+        chunk = await receipt.read(chunk_size)
+        if not chunk:
+            break
+        content.extend(chunk)
+        if len(content) > max_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Receipt exceeds the 10 MB size limit.",
+            )
+    return bytes(content)
 
 
 @router.get("/{transaction_id}/receipt/{filename}")

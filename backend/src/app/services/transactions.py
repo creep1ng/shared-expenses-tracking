@@ -269,17 +269,28 @@ class TransactionService:
             extension=extension,
         )
         previous_key = self._get_receipt_object_key(transaction.receipt_url)
+        previous_receipt_url = transaction.receipt_url
 
-        self._object_storage.put_object(
-            key=object_key,
-            content=upload.content,
-            content_type=upload.content_type,
-        )
         self._transactions.update_receipt_url(transaction, receipt_url=receipt_url)
         self._session.commit()
 
+        try:
+            self._object_storage.put_object(
+                key=object_key,
+                content=upload.content,
+                content_type=upload.content_type,
+            )
+        except Exception:
+            self._session.rollback()
+            self._transactions.update_receipt_url(transaction, receipt_url=previous_receipt_url)
+            self._session.commit()
+            raise
+
         if previous_key is not None and previous_key != object_key:
-            self._object_storage.delete_object(key=previous_key)
+            try:
+                self._object_storage.delete_object(key=previous_key)
+            except ObjectStorageNotFoundError:
+                pass
 
         return self._get_transaction_or_404(
             workspace_id=workspace_id,
