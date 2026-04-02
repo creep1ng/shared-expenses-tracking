@@ -1,0 +1,23 @@
+{
+  "skill_name": "epic-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to add a transaction history page with filters and search. Users should be able to filter by date range, account, category, and transaction type. They should also be able to search by description text. This should work in both personal and shared workspaces, and in shared workspaces you should be able to see who created each transaction.",
+      "expected_output": "A complete epic artifact set including tech spec, epic issue body, user story issues, code stubs, and delegation plan for a transaction history feature with filtering and search.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We need shared workspace members to settle up debts between them. Like, if I owe my partner $50, I should be able to record a payment and it updates our net balance.",
+      "expected_output": "A complete epic artifact set for a settle-up feature that lets shared workspace members record reimbursements and clear net balances, including tech spec, issues, stubs, and delegation plan.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I want the dashboard to be more useful. Right now it's just basic KPIs but I want charts — like a trend line of my balance over time, and a breakdown of expenses by category. Also it would be cool to compare income vs expenses month over month.",
+      "expected_output": "A complete epic artifact set for dashboard enhancements with chart visualizations including balance trend line, expense category breakdown, and income vs expenses comparison.",
+      "files": []
+    }
+  ]
+}
