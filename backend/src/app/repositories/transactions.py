@@ -55,6 +55,21 @@ class TransactionRepository:
         )
         return list(self._session.scalars(statement).all())
 
+    def list_by_workspace_and_user(self, *, workspace_id: UUID, user_id: UUID) -> list[Transaction]:
+        statement = (
+            self._base_query()
+            .where(Transaction.workspace_id == workspace_id)
+            .order_by(Transaction.occurred_at.desc(), Transaction.created_at.desc())
+        )
+        all_transactions = list(self._session.scalars(statement).all())
+        user_id_str = str(user_id)
+        return [
+            t
+            for t in all_transactions
+            if t.paid_by_user_id == user_id
+            or self._user_in_split_values(t.split_config, user_id_str)
+        ]
+
     def get_by_id(self, *, workspace_id: UUID, transaction_id: UUID) -> Transaction | None:
         statement = self._base_query().where(
             Transaction.workspace_id == workspace_id,
@@ -158,6 +173,15 @@ class TransactionRepository:
             for account_id, total in self._session.execute(statement).all()
             if account_id is not None
         }
+
+    @staticmethod
+    def _user_in_split_values(split_config: dict[str, object] | None, user_id_str: str) -> bool:
+        if split_config is None:
+            return False
+        values = split_config.get("values")
+        if not isinstance(values, dict):
+            return False
+        return user_id_str in values
 
     @staticmethod
     def _base_query() -> Select[tuple[Transaction]]:
