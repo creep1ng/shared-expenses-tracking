@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import timedelta
 from uuid import UUID
@@ -18,6 +19,8 @@ from app.core.security import (
 from app.core.time import utc_now
 from app.db.models import User
 from app.repositories.auth import PasswordResetTokenRepository, UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -129,6 +132,13 @@ class AuthService:
         self._reset_tokens.revoke_for_user(user.id)
         self._reset_tokens.create(user_id=user.id, token_hash=token_hash, expires_at=expires_at)
         self._session.commit()
+
+        logger.info(
+            "Password reset token generated for user %s <%s>: %s",
+            user.id,
+            normalized_email,
+            token,
+        )
 
         return PasswordResetRequestResult(
             token=token if self._settings.auth_enable_dev_reset_token_response else None,
