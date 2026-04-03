@@ -452,6 +452,260 @@ def test_transaction_not_found_is_scoped_to_workspace(transactions_client: TestC
     assert response.json() == {"detail": "Transaction not found."}
 
 
+def test_expense_requires_source_account_id(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="personal")
+    expense_category = _find_category_by_name(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Comida",
+    )
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": None,
+            "category_id": expense_category["id"],
+            "amount_minor": 2500,
+            "currency": "ARS",
+            "description": "Sin cuenta",
+            "occurred_at": "2026-03-10T08:00:00Z",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Expense transactions require source_account_id."
+
+
+def test_expense_requires_category_id(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Gastos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Tarjeta",
+        account_type="credit_card",
+        currency="ARS",
+        initial_balance_minor=0,
+        description=None,
+    )
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": account["id"],
+            "category_id": None,
+            "amount_minor": 2500,
+            "currency": "ARS",
+            "description": "Sin categoria",
+            "occurred_at": "2026-03-10T08:00:00Z",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Expense transactions require category_id."
+
+
+def test_income_requires_destination_account_id(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Ingresos", workspace_type="personal")
+    income_category = _find_category_by_name(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Salario",
+    )
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "income",
+            "destination_account_id": None,
+            "category_id": income_category["id"],
+            "amount_minor": 50000,
+            "currency": "ARS",
+            "description": "Sin cuenta",
+            "occurred_at": "2026-03-10T08:00:00Z",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Income transactions require destination_account_id."
+
+
+def test_income_requires_category_id(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Ingresos", workspace_type="personal")
+    account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Cuenta sueldo",
+        account_type="bank_account",
+        currency="ARS",
+        initial_balance_minor=0,
+        description=None,
+    )
+
+    response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "income",
+            "destination_account_id": account["id"],
+            "category_id": None,
+            "amount_minor": 50000,
+            "currency": "ARS",
+            "description": "Sin categoria",
+            "occurred_at": "2026-03-10T08:00:00Z",
+        },
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Income transactions require category_id."
+
+
+def test_transfer_requires_both_accounts(transactions_client: TestClient) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Transferencias", workspace_type="personal")
+    source_account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=20000,
+        description=None,
+    )
+
+    response_missing_dest = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "transfer",
+            "source_account_id": source_account["id"],
+            "destination_account_id": None,
+            "amount_minor": 3500,
+            "currency": "ARS",
+            "description": "Sin cuenta destino",
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    )
+    assert response_missing_dest.status_code == 422
+    assert response_missing_dest.json()["detail"] == (
+        "Transfer transactions require source_account_id and destination_account_id."
+    )
+
+    response_missing_src = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "transfer",
+            "source_account_id": None,
+            "destination_account_id": source_account["id"],
+            "amount_minor": 3500,
+            "currency": "ARS",
+            "description": "Sin cuenta origen",
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    )
+    assert response_missing_src.status_code == 422
+    assert response_missing_src.json()["detail"] == (
+        "Transfer transactions require source_account_id and destination_account_id."
+    )
+
+
+def test_list_transactions_returns_account_and_category_names(
+    transactions_client: TestClient,
+) -> None:
+    owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
+    workspace = _create_workspace(owner_client, name="Lista", workspace_type="personal")
+
+    source_account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Caja",
+        account_type="cash",
+        currency="ARS",
+        initial_balance_minor=10000,
+        description=None,
+    )
+    destination_account = _create_account(
+        owner_client,
+        workspace_id=workspace["id"],
+        name="Banco",
+        account_type="bank_account",
+        currency="ARS",
+        initial_balance_minor=5000,
+        description=None,
+    )
+    expense_category = _find_category_by_name(
+        owner_client, workspace_id=workspace["id"], name="Comida"
+    )
+    income_category = _find_category_by_name(
+        owner_client, workspace_id=workspace["id"], name="Salario"
+    )
+
+    expense_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "expense",
+            "source_account_id": source_account["id"],
+            "category_id": expense_category["id"],
+            "amount_minor": 2500,
+            "currency": "ARS",
+            "description": "Almuerzo",
+            "occurred_at": "2026-03-10T08:00:00Z",
+        },
+    )
+    assert expense_response.status_code == 201
+    expense_transaction = expense_response.json()
+    assert expense_transaction["source_account"]["name"] == "Caja"
+    assert expense_transaction["category"]["name"] == "Comida"
+
+    income_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "income",
+            "destination_account_id": destination_account["id"],
+            "category_id": income_category["id"],
+            "amount_minor": 50000,
+            "currency": "ARS",
+            "description": "Sueldo",
+            "occurred_at": "2026-03-10T09:00:00Z",
+        },
+    )
+    assert income_response.status_code == 201
+    income_transaction = income_response.json()
+    assert income_transaction["destination_account"]["name"] == "Banco"
+    assert income_transaction["category"]["name"] == "Salario"
+
+    transfer_response = owner_client.post(
+        f"/api/v1/workspaces/{workspace['id']}/transactions",
+        json={
+            "type": "transfer",
+            "source_account_id": source_account["id"],
+            "destination_account_id": destination_account["id"],
+            "amount_minor": 3500,
+            "currency": "ARS",
+            "description": "Traspaso",
+            "occurred_at": "2026-03-10T10:00:00Z",
+        },
+    )
+    assert transfer_response.status_code == 201
+    transfer_transaction = transfer_response.json()
+    assert transfer_transaction["source_account"]["name"] == "Caja"
+    assert transfer_transaction["destination_account"]["name"] == "Banco"
+
+    list_response = owner_client.get(f"/api/v1/workspaces/{workspace['id']}/transactions")
+    assert list_response.status_code == 200
+    transactions_list = list_response.json()["transactions"]
+
+    transactions_by_type = {t["type"]: t for t in transactions_list}
+
+    assert transactions_by_type["expense"]["source_account"]["name"] == "Caja"
+    assert transactions_by_type["expense"]["category"]["name"] == "Comida"
+
+    assert transactions_by_type["income"]["destination_account"]["name"] == "Banco"
+    assert transactions_by_type["income"]["category"]["name"] == "Salario"
+
+    assert transactions_by_type["transfer"]["source_account"]["name"] == "Caja"
+    assert transactions_by_type["transfer"]["destination_account"]["name"] == "Banco"
+
+
 def test_occurred_at_must_be_timezone_aware(transactions_client: TestClient) -> None:
     owner_client = _sign_up_and_sign_in(transactions_client, "owner@example.com")
     workspace = _create_workspace(owner_client, name="Fechas", workspace_type="personal")
