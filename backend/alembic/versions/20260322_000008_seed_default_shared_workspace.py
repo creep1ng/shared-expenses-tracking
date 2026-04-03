@@ -39,20 +39,19 @@ def upgrade() -> None:
     """Create a default shared workspace for each user who doesn't have one."""
     bind = op.get_bind()
 
-    users_result = sa.text("SELECT id FROM users").execute(bind)
+    users_result = bind.execute(sa.text("SELECT id FROM users"))
     user_ids = [row[0] for row in users_result]
 
     for user_id in user_ids:
-        existing = (
+        existing = bind.execute(
             sa.text(
                 "SELECT 1 FROM workspace_members wm "
                 "JOIN workspaces w ON w.id = wm.workspace_id "
                 "WHERE wm.user_id = :user_id AND w.type = 'shared' "
                 "LIMIT 1"
-            )
-            .execute(bind, {"user_id": user_id})
-            .first()
-        )
+            ),
+            {"user_id": user_id},
+        ).first()
 
         if existing is not None:
             continue
@@ -60,11 +59,12 @@ def upgrade() -> None:
         workspace_id = uuid.uuid4()
         now = datetime.now(UTC)
 
-        sa.text(
-            "INSERT INTO workspaces (id, name, type, created_by_user_id, created_at, updated_at) "
-            "VALUES (:id, :name, :type, :created_by, :now, :now)"
-        ).execute(
-            bind,
+        bind.execute(
+            sa.text(
+                "INSERT INTO workspaces "
+                "(id, name, type, created_by_user_id, created_at, updated_at) "
+                "VALUES (:id, :name, :type, :created_by, :now, :now)"
+            ),
             {
                 "id": workspace_id,
                 "name": "Gastos compartidos",
@@ -75,12 +75,12 @@ def upgrade() -> None:
         )
 
         member_id = uuid.uuid4()
-        sa.text(
-            "INSERT INTO workspace_members "
-            "(id, workspace_id, user_id, role, created_at, updated_at) "
-            "VALUES (:id, :workspace_id, :user_id, :role, :now, :now)"
-        ).execute(
-            bind,
+        bind.execute(
+            sa.text(
+                "INSERT INTO workspace_members "
+                "(id, workspace_id, user_id, role, created_at, updated_at) "
+                "VALUES (:id, :workspace_id, :user_id, :role, :now, :now)"
+            ),
             {
                 "id": member_id,
                 "workspace_id": workspace_id,
@@ -101,12 +101,12 @@ def _seed_default_categories(
     """Seed default categories matching DEFAULT_WORKSPACE_CATEGORY_SEEDS."""
     for name, cat_type, icon, color in DEFAULT_CATEGORIES:
         category_id = uuid.uuid4()
-        sa.text(
-            "INSERT INTO categories "
-            "(id, workspace_id, name, type, icon, color, created_at, updated_at) "
-            "VALUES (:id, :workspace_id, :name, :type, :icon, :color, :now, :now)"
-        ).execute(
-            bind,
+        bind.execute(
+            sa.text(
+                "INSERT INTO categories "
+                "(id, workspace_id, name, type, icon, color, created_at, updated_at) "
+                "VALUES (:id, :workspace_id, :name, :type, :icon, :color, :now, :now)"
+            ),
             {
                 "id": category_id,
                 "workspace_id": workspace_id,
@@ -123,15 +123,20 @@ def downgrade() -> None:
     """Remove seeded shared workspaces (only those named 'Gastos compartidos')."""
     bind = op.get_bind()
 
-    workspaces = sa.text("SELECT id FROM workspaces WHERE name = 'Gastos compartidos'").execute(
-        bind
+    workspaces = bind.execute(
+        sa.text("SELECT id FROM workspaces WHERE name = 'Gastos compartidos'")
     )
 
     for (workspace_id,) in workspaces:
-        sa.text("DELETE FROM categories WHERE workspace_id = :wid").execute(
-            bind, {"wid": workspace_id}
+        bind.execute(
+            sa.text("DELETE FROM categories WHERE workspace_id = :wid"),
+            {"wid": workspace_id},
         )
-        sa.text("DELETE FROM workspace_members WHERE workspace_id = :wid").execute(
-            bind, {"wid": workspace_id}
+        bind.execute(
+            sa.text("DELETE FROM workspace_members WHERE workspace_id = :wid"),
+            {"wid": workspace_id},
         )
-        sa.text("DELETE FROM workspaces WHERE id = :wid").execute(bind, {"wid": workspace_id})
+        bind.execute(
+            sa.text("DELETE FROM workspaces WHERE id = :wid"),
+            {"wid": workspace_id},
+        )
