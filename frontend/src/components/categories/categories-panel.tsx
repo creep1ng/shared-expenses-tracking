@@ -3,6 +3,8 @@
 import React from "react";
 import { useEffect, useState } from "react";
 
+import { Modal } from "@/components/ui/modal";
+import { Plus } from "lucide-react";
 import {
   CategoryForm,
   DEFAULT_CATEGORY_FORM_VALUES,
@@ -19,6 +21,7 @@ import type { Category, CategoryCreatePayload } from "@/lib/categories/types";
 
 type CategoriesPanelProps = {
   workspaceId: string;
+  mode?: "crud" | "readonly";
 };
 
 type Notice = {
@@ -35,10 +38,11 @@ function toCategoryFormDefaults(category: Category) {
   } as const;
 }
 
-export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
+export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const loadCategories = React.useCallback(async () => {
@@ -68,6 +72,7 @@ export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
       const category = await createCategory(workspaceId, payload);
       setCategories((currentCategories) => getSelectableCategories([category, ...currentCategories]));
       setNotice({ type: "success", message: `Categoria ${category.name} creada correctamente.` });
+      setIsCreateModalOpen(false);
       return true;
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -122,12 +127,23 @@ export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
 
   return (
     <section className="workspace-panel">
-      <div className="workspace-form-header">
-        <h2 className="workspace-section-title">Categorias</h2>
-        <p className="workspace-section-copy">
-          Las listas y selectores muestran categorias activas por defecto para mantener limpio el flujo.
-        </p>
-      </div>
+      {mode === "crud" ? (
+        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 className="workspace-section-title">Categorías</h2>
+            <p className="workspace-section-copy">
+              Las listas y selectores muestran categorias activas por defecto para mantener limpio el flujo.
+            </p>
+          </div>
+          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={16} /> Nueva categoría
+          </button>
+        </div>
+      ) : (
+        <div className="workspace-form-header">
+          <h2 className="workspace-section-title">Categorías</h2>
+        </div>
+      )}
 
       {notice ? (
         <div
@@ -138,24 +154,7 @@ export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
         </div>
       ) : null}
 
-      <div className="entity-section">
-        <div className="workspace-form-header">
-          <h3 className="workspace-section-title">Nueva categoria</h3>
-          <p className="workspace-section-copy">
-            Las categorias base sembradas por backend aparecen aqui y puedes ampliarlas segun el espacio.
-          </p>
-        </div>
-        <CategoryForm
-          defaultValues={DEFAULT_CATEGORY_FORM_VALUES}
-          fieldIdPrefix={`category-create-${workspaceId}`}
-          onSubmitCategory={handleCreate}
-          resetOnSuccess
-          submitLabel="Crear categoria"
-          submittingLabel="Guardando..."
-        />
-      </div>
-
-      <div className="entity-list" aria-label="Categorias activas del espacio">
+      <div className={mode === "crud" ? "dashboard-kpi-grid" : "dashboard-kpi-grid"} aria-label="Categorias activas del espacio" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
         {isLoading ? <p className="workspace-section-copy">Cargando categorias...</p> : null}
 
         {!isLoading && categories.length === 0 ? (
@@ -169,61 +168,47 @@ export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
               const isEditing = editingCategoryId === category.id;
 
               return (
-                <article key={category.id} className="entity-card">
-                  <div className="entity-card-header">
-                    <div>
-                      <div className="workspace-list-topline">
-                        <strong>{category.name}</strong>
-                        <span className="workspace-role-chip">{CATEGORY_TYPE_LABELS[category.type]}</span>
-                      </div>
-                      <p className="workspace-section-copy">
-                        Icono <code>{category.icon}</code>
-                      </p>
+                <article key={category.id} className="kpi-card" style={{ borderTop: `4px solid ${category.color}`, padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
+                      <h3 className="kpi-label" style={{ fontSize: '1.1rem', margin: 0, color: 'var(--foreground)' }}>{category.name}</h3>
                     </div>
-                    <div className="entity-card-side">
-                      <span
-                        aria-hidden="true"
-                        className="entity-color-swatch"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="workspace-member-date">{category.color}</span>
-                    </div>
+                    <span className="workspace-role-chip" style={{ fontSize: '0.75rem' }}>{CATEGORY_TYPE_LABELS[category.type]}</span>
                   </div>
 
-                  <div className="entity-actions">
-                    <button
-                      className="secondary-action entity-secondary-action"
-                      onClick={() => setEditingCategoryId(isEditing ? null : category.id)}
-                      type="button"
-                    >
-                      {isEditing ? "Cerrar edicion" : "Editar"}
-                    </button>
-                    <button
-                      className="secondary-action entity-danger-action"
-                      onClick={() => {
-                        void handleArchive(category);
-                      }}
-                      type="button"
-                    >
-                      Archivar
-                    </button>
-                  </div>
+                  {mode === "crud" && (
+                    <div className="entity-actions" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
+                      <button
+                        className="secondary-action entity-secondary-action"
+                        onClick={() => setEditingCategoryId(isEditing ? null : category.id)}
+                        type="button"
+                        style={{ flex: 1, padding: '0.4rem' }}
+                      >
+                        {isEditing ? "Cerrar edicion" : "Editar"}
+                      </button>
+                      <button
+                        className="secondary-action entity-danger-action"
+                        onClick={() => {
+                          void handleArchive(category);
+                        }}
+                        type="button"
+                        style={{ padding: '0.4rem' }}
+                      >
+                        Archivar
+                      </button>
+                    </div>
+                  )}
 
-                  {isEditing ? (
-                    <div className="entity-inline-form">
-                      <div className="workspace-form-header">
-                        <h3 className="workspace-section-title">Editar categoria</h3>
-                        <p className="workspace-section-copy">
-                          Ajusta nombre, color o icono sin perder la relacion historica con movimientos.
-                        </p>
-                      </div>
+                  {isEditing && mode === "crud" ? (
+                    <div className="entity-inline-form" style={{ marginTop: '1rem' }}>
                       <CategoryForm
                         defaultValues={toCategoryFormDefaults(category)}
                         fieldIdPrefix={`category-edit-${category.id}`}
                         onCancel={() => setEditingCategoryId(null)}
                         onSubmitCategory={(payload) => handleUpdate(category.id, payload)}
-                        submitLabel="Guardar cambios"
-                        submittingLabel="Guardando..."
+                        submitLabel="Guardar"
+                        submittingLabel="..."
                       />
                     </div>
                   ) : null}
@@ -232,6 +217,24 @@ export function CategoriesPanel({ workspaceId }: CategoriesPanelProps) {
             })
           : null}
       </div>
+
+      {mode === "crud" && (
+        <Modal 
+          isOpen={isCreateModalOpen} 
+          onClose={() => setIsCreateModalOpen(false)} 
+          title="Nueva categoría"
+          description="Las categorias base sembradas por backend aparecen aqui y puedes ampliarlas segun el espacio."
+        >
+          <CategoryForm
+            defaultValues={DEFAULT_CATEGORY_FORM_VALUES}
+            fieldIdPrefix={`category-create-${workspaceId}`}
+            onSubmitCategory={handleCreate}
+            resetOnSuccess
+            submitLabel="Crear categoria"
+            submittingLabel="Guardando..."
+          />
+        </Modal>
+      )}
     </section>
   );
 }

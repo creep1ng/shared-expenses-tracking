@@ -3,6 +3,8 @@
 import React from "react";
 import { useEffect, useState } from "react";
 
+import { Modal } from "@/components/ui/modal";
+import { Plus } from "lucide-react";
 import { AccountForm, DEFAULT_ACCOUNT_FORM_VALUES } from "@/components/accounts/account-form";
 import { getErrorMessage } from "@/lib/auth/errors";
 import { archiveAccount, createAccount, listAccounts, updateAccount } from "@/lib/accounts/api";
@@ -16,6 +18,7 @@ import type { Account, AccountCreatePayload } from "@/lib/accounts/types";
 type AccountsPanelProps = {
   workspaceId: string;
   refreshNonce?: number;
+  mode?: "crud" | "readonly";
 };
 
 type Notice = {
@@ -33,10 +36,11 @@ function toAccountFormDefaults(account: Account) {
   } as const;
 }
 
-export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelProps) {
+export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: AccountsPanelProps) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const loadAccounts = React.useCallback(async () => {
@@ -68,6 +72,7 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelPr
       const account = await createAccount(workspaceId, payload);
       setAccounts((currentAccounts) => [account, ...currentAccounts]);
       setNotice({ type: "success", message: `Cuenta ${account.name} creada correctamente.` });
+      setIsCreateModalOpen(false);
       return true;
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -118,12 +123,23 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelPr
 
   return (
     <section className="workspace-panel">
-      <div className="workspace-form-header">
-        <h2 className="workspace-section-title">Cuentas</h2>
-        <p className="workspace-section-copy">
-          Gestiona las cuentas activas del espacio y revisa su saldo actual en una sola vista.
-        </p>
-      </div>
+      {mode === "crud" ? (
+        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 className="workspace-section-title">Cuentas</h2>
+            <p className="workspace-section-copy">
+              Gestiona las cuentas activas del espacio y revisa su saldo actual en una sola vista.
+            </p>
+          </div>
+          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={16} /> Nueva cuenta
+          </button>
+        </div>
+      ) : (
+        <div className="workspace-form-header">
+          <h2 className="workspace-section-title">Saldos de cuentas</h2>
+        </div>
+      )}
 
       {notice ? (
         <div
@@ -134,35 +150,28 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelPr
         </div>
       ) : null}
 
-      <div className="entity-section">
-        <div className="workspace-form-header">
-          <h3 className="workspace-section-title">Nueva cuenta</h3>
-          <p className="workspace-section-copy">
-            Registra efectivo, bancos, ahorros o tarjetas con su saldo inicial en moneda ISO.
-          </p>
-        </div>
-        <AccountForm
-          defaultValues={DEFAULT_ACCOUNT_FORM_VALUES}
-          fieldIdPrefix={`account-create-${workspaceId}`}
-          onSubmitAccount={handleCreate}
-          resetOnSuccess
-          submitLabel="Crear cuenta"
-          submittingLabel="Guardando..."
-        />
-      </div>
-
-      <div className="entity-list" aria-label="Cuentas activas del espacio">
+      <div className={mode === "crud" ? "entity-list" : "dashboard-kpi-grid"} aria-label="Cuentas activas del espacio">
         {isLoading ? <p className="workspace-section-copy">Cargando cuentas...</p> : null}
 
         {!isLoading && accounts.length === 0 ? (
           <p className="workspace-section-copy">
-            Todavia no hay cuentas activas. Crea la primera para empezar a registrar movimientos.
+            Todavia no hay cuentas activas.
           </p>
         ) : null}
 
         {!isLoading
           ? accounts.map((account) => {
               const isEditing = editingAccountId === account.id;
+
+              if (mode === "readonly") {
+                return (
+                  <article key={account.id} className="kpi-card">
+                    <h3 className="kpi-label">{account.name}</h3>
+                    <p className="kpi-value">{formatMinorUnitsAsCurrency(account.current_balance_minor, account.currency)}</p>
+                    <p className="kpi-subtext">{ACCOUNT_TYPE_LABELS[account.type]}</p>
+                  </article>
+                );
+              }
 
               return (
                 <article key={account.id} className="entity-card">
@@ -228,6 +237,24 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0 }: AccountsPanelPr
             })
           : null}
       </div>
+
+      {mode === "crud" && (
+        <Modal 
+          isOpen={isCreateModalOpen} 
+          onClose={() => setIsCreateModalOpen(false)} 
+          title="Nueva cuenta"
+          description="Registra efectivo, bancos, ahorros o tarjetas con su saldo inicial en moneda ISO."
+        >
+          <AccountForm
+            defaultValues={DEFAULT_ACCOUNT_FORM_VALUES}
+            fieldIdPrefix={`account-create-${workspaceId}`}
+            onSubmitAccount={handleCreate}
+            resetOnSuccess
+            submitLabel="Crear cuenta"
+            submittingLabel="Guardando..."
+          />
+        </Modal>
+      )}
     </section>
   );
 }

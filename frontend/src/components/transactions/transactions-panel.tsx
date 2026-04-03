@@ -3,6 +3,8 @@
 import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Modal } from "@/components/ui/modal";
+import { Plus } from "lucide-react";
 import {
   DEFAULT_TRANSACTION_FORM_VALUES,
   TransactionForm,
@@ -42,6 +44,7 @@ import type {
 type TransactionsPanelProps = {
   workspaceId: string;
   onTransactionsChanged?: () => void;
+  mode?: "crud" | "recent";
 };
 
 type Notice = {
@@ -108,7 +111,7 @@ function mergeTransactionCategories(categories: Category[], transactions: Transa
   return [...merged.values()].sort((left, right) => left.name.localeCompare(right.name, "es"));
 }
 
-export function TransactionsPanel({ workspaceId, onTransactionsChanged }: TransactionsPanelProps) {
+export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "crud" }: TransactionsPanelProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -117,6 +120,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
   const [transactionDetails, setTransactionDetails] = useState<Record<string, Transaction>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadingTransactionId, setLoadingTransactionId] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
   const loadPanelData = React.useCallback(async () => {
@@ -210,6 +214,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
 
       syncTransaction(transaction);
       setNotice({ type: "success", message: "Movimiento registrado correctamente." });
+      setIsCreateModalOpen(false);
       await loadPanelData();
       onTransactionsChanged?.();
       return true;
@@ -309,14 +314,27 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
     }
   };
 
+  const displayedTransactions = mode === "recent" ? transactions.slice(0, 10) : transactions;
+
   return (
     <section className="workspace-panel">
-      <div className="workspace-form-header">
-        <h2 className="workspace-section-title">Movimientos</h2>
-        <p className="workspace-section-copy">
-          Registra ingresos, gastos y transferencias con detalle inline y orden cronologico.
-        </p>
-      </div>
+      {mode === "crud" ? (
+        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 className="workspace-section-title">Movimientos</h2>
+            <p className="workspace-section-copy">
+              Registra ingresos, gastos y transferencias con detalle inline y orden cronologico.
+            </p>
+          </div>
+          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={16} /> Nuevo movimiento
+          </button>
+        </div>
+      ) : (
+        <div className="workspace-form-header">
+          <h2 className="workspace-section-title">Últimos movimientos</h2>
+        </div>
+      )}
 
       {notice ? (
         <div
@@ -327,37 +345,17 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
         </div>
       ) : null}
 
-      <div className="entity-section">
-        <div className="workspace-form-header">
-          <h3 className="workspace-section-title">Nuevo movimiento</h3>
-          <p className="workspace-section-copy">
-            La moneda se resuelve desde las cuentas seleccionadas y las transferencias quedan separadas.
-          </p>
-        </div>
-        <TransactionForm
-          accounts={formAccounts}
-          allowReceiptUpload
-          categories={formCategories}
-          defaultValues={DEFAULT_TRANSACTION_FORM_VALUES}
-          fieldIdPrefix={`transaction-create-${workspaceId}`}
-          onSubmitTransaction={handleCreate}
-          resetOnSuccess
-          submitLabel="Guardar movimiento"
-          submittingLabel="Guardando..."
-        />
-      </div>
-
       <div className="entity-list" aria-label="Historial de movimientos del espacio">
         {isLoading ? <p className="workspace-section-copy">Cargando movimientos...</p> : null}
 
-        {!isLoading && transactions.length === 0 ? (
+        {!isLoading && displayedTransactions.length === 0 ? (
           <p className="workspace-section-copy">
-            Todavia no hay movimientos. Registra el primero para empezar a construir el historial.
+            Todavia no hay movimientos.
           </p>
         ) : null}
 
         {!isLoading
-          ? transactions.map((transaction) => {
+          ? displayedTransactions.map((transaction) => {
               const detailTransaction = transactionDetails[transaction.id] ?? transaction;
               const isExpanded = expandedTransactionId === transaction.id;
               const isEditing = editingTransactionId === transaction.id;
@@ -517,6 +515,27 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
             })
           : null}
       </div>
+
+      {mode === "crud" && (
+        <Modal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          title="Nuevo movimiento"
+          description="La moneda se resuelve desde las cuentas seleccionadas y las transferencias quedan separadas."
+        >
+          <TransactionForm
+            accounts={formAccounts}
+            allowReceiptUpload
+            categories={formCategories}
+            defaultValues={DEFAULT_TRANSACTION_FORM_VALUES}
+            fieldIdPrefix={`transaction-create-${workspaceId}`}
+            onSubmitTransaction={handleCreate}
+            resetOnSuccess
+            submitLabel="Guardar movimiento"
+            submittingLabel="Guardando..."
+          />
+        </Modal>
+      )}
     </section>
   );
 }
