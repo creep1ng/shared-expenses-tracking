@@ -249,24 +249,28 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
             {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
             
             {activeTab === "home" && (
-              <>
-                <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
-                <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
-                {/* 
-                   I will update AccountsPanel and TransactionsPanel below to respect Home properties
-                   (Show cards/list without CRUD). Temporarily just rendering them as is. 
-                */}
-                <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="readonly" />
-                <TransactionsPanel workspaceId={selectedWorkspace.id} mode="recent" onTransactionsChanged={handleTransactionsChanged} />
-                <WorkspaceMembersList members={members} />
-                <WorkspaceInvitationsPanel
-                  workspace={selectedWorkspace}
-                  invitations={invitations}
-                  latestInvitationToken={latestInvitationToken}
-                  onCreateInvitation={handleCreateInvitation}
-                  onRevokeInvitation={handleRevokeInvitation}
-                />
-              </>
+              <div className="home-grid">
+                <div className="home-column">
+                  <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
+                  <WorkspaceMembersList members={members} />
+                  <WorkspaceInvitationsPanel
+                    workspace={selectedWorkspace}
+                    invitations={invitations}
+                    latestInvitationToken={latestInvitationToken}
+                    onCreateInvitation={handleCreateInvitation}
+                    onRevokeInvitation={handleRevokeInvitation}
+                  />
+                  <TransactionsPanel
+                    workspaceId={selectedWorkspace.id}
+                    mode="recent"
+                    onTransactionsChanged={handleTransactionsChanged}
+                  />
+                </div>
+                <div className="home-column">
+                  <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
+                  <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="readonly" />
+                </div>
+              </div>
             )}
 
             {activeTab === "movimientos" && (
