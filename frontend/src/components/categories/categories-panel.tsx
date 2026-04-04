@@ -178,26 +178,26 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
                   </div>
 
                   {mode === "crud" && (
-                    <div className="entity-actions" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
-                      <button
-                        className="secondary-action entity-secondary-action"
-                        onClick={() => setEditingCategoryId(isEditing ? null : category.id)}
-                        type="button"
-                        style={{ flex: 1, padding: '0.4rem' }}
-                      >
-                        {isEditing ? "Cerrar edicion" : "Editar"}
-                      </button>
-                      <button
-                        className="secondary-action entity-danger-action"
-                        onClick={() => {
-                          void handleArchive(category);
-                        }}
-                        type="button"
-                        style={{ padding: '0.4rem' }}
-                      >
-                        Archivar
-                      </button>
-                    </div>
+                     <div className="entity-actions categories-actions" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
+                       <button
+                         className="secondary-action entity-secondary-action"
+                         onClick={() => setEditingCategoryId(isEditing ? null : category.id)}
+                         type="button"
+                         style={{ flex: 1, padding: '0.4rem' }}
+                       >
+                         {isEditing ? "Cerrar edicion" : "Editar"}
+                       </button>
+                       <button
+                         className="secondary-action entity-danger-action"
+                         onClick={() => {
+                           void handleArchive(category);
+                         }}
+                         type="button"
+                         style={{ padding: '0.4rem' }}
+                       >
+                         Archivar
+                       </button>
+                     </div>
                   )}
 
                   {isEditing && mode === "crud" ? (

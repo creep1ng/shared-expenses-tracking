@@ -326,9 +326,9 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
               Registra ingresos, gastos y transferencias con detalle inline y orden cronologico.
             </p>
           </div>
-          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={16} /> Nuevo movimiento
-          </button>
+           <button className="primary-action mobile-button-icon-only" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+             <Plus size={18} /> <span className="desktop-only">Nuevo movimiento</span>
+           </button>
         </div>
       ) : (
         <div className="workspace-form-header">
