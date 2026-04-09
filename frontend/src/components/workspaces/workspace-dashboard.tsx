@@ -1,24 +1,19 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 
 import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { CategoriesPanel } from "@/components/categories/categories-panel";
 import { DashboardKpiOverview } from "@/components/dashboard/dashboard-kpi-overview";
 import { TransactionsPanel } from "@/components/transactions/transactions-panel";
-import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { WorkspaceInvitationsPanel } from "@/components/workspaces/workspace-invitations-panel";
-import { WorkspaceList } from "@/components/workspaces/workspace-list";
 import { WorkspaceMembersList } from "@/components/workspaces/workspace-members-list";
 import { WorkspaceSummary } from "@/components/workspaces/workspace-summary";
-import { signOut } from "@/lib/auth/api";
+import { TopNav } from "@/components/ui/top-nav";
 import { getErrorMessage } from "@/lib/auth/errors";
 import type { User } from "@/lib/auth/types";
 import {
-  createWorkspace,
   createWorkspaceInvitation,
   getWorkspace,
   listWorkspaceInvitations,
@@ -50,8 +45,6 @@ function upsertWorkspace(workspaces: Workspace[], nextWorkspace: Workspace): Wor
 }
 
 export function WorkspaceDashboard({ user, initialWorkspaceId = null }: WorkspaceDashboardProps) {
-  const router = useRouter();
-  const [isSigningOut, startSignOutTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingWorkspace, setIsRefreshingWorkspace] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -62,6 +55,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [latestInvitationToken, setLatestInvitationToken] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [activeTab, setActiveTab] = useState<"home" | "movimientos" | "cuentas" | "categorias">("home");
 
   const refreshSelectedWorkspace = React.useCallback(async (workspaceId: string) => {
     setIsRefreshingWorkspace(true);
@@ -133,20 +127,6 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
     };
   }, [initialWorkspaceId, refreshSelectedWorkspace]);
 
-  const handleSignOut = () => {
-    setNotice(null);
-
-    startSignOutTransition(async () => {
-      try {
-        await signOut();
-        router.replace("/sign-in");
-        router.refresh();
-      } catch (error) {
-        setNotice({ type: "error", message: getErrorMessage(error) });
-      }
-    });
-  };
-
   const handleSelectWorkspace = async (workspaceId: string) => {
     setNotice(null);
 
@@ -170,21 +150,6 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
       setNotice({ type: "error", message: getErrorMessage(error) });
     }
   }, [refreshSelectedWorkspace, selectedWorkspace]);
-
-  const handleCreateWorkspace = async (values: { name: string; type: "personal" | "shared" }) => {
-    setNotice(null);
-
-    try {
-      const workspace = await createWorkspace(values);
-      setWorkspaces((currentWorkspaces) => upsertWorkspace(currentWorkspaces, workspace));
-      await refreshSelectedWorkspace(workspace.id);
-      setNotice({ type: "success", message: `Espacio ${workspace.name} creado correctamente.` });
-      return true;
-    } catch (error) {
-      setNotice({ type: "error", message: getErrorMessage(error) });
-      return false;
-    }
-  };
 
   const handleRenameWorkspace = async (values: { name: string }) => {
     if (!selectedWorkspaceId) {
@@ -247,96 +212,87 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
   };
 
   return (
-    <main className="workspace-dashboard-shell">
-      <section className="workspace-dashboard-card">
-        <header className="workspace-dashboard-header">
-          <div>
-            <span className="dashboard-eyebrow">Sesion activa</span>
-            <h1 className="dashboard-title">Tablero de espacios de trabajo</h1>
-            <p className="dashboard-copy">
-              Has iniciado sesion como <strong>{user.email}</strong>. Desde aqui puedes crear espacios,
-              revisar miembros y gestionar invitaciones segun tu rol.
-            </p>
-          </div>
-
-          <div className="dashboard-actions">
-            <Link className="secondary-action" href="/invitations/accept">
-              Aceptar invitacion
-            </Link>
-            <button className="primary-action" onClick={handleSignOut} type="button" disabled={isSigningOut}>
-              {isSigningOut ? "Cerrando sesion..." : "Cerrar sesion"}
-            </button>
-          </div>
-        </header>
-
+    <>
+      <TopNav 
+        user={user} 
+        workspaces={workspaces} 
+        selectedWorkspaceId={selectedWorkspaceId} 
+        onSelectWorkspace={handleSelectWorkspace} 
+        activeTab={activeTab} 
+        onTabChange={(tab) => setActiveTab(tab as "home" | "movimientos" | "cuentas" | "categorias")} 
+      />
+      <main className="main-content">
         {notice ? (
           <div
             className={`auth-feedback ${notice.type === "error" ? "auth-feedback-error" : "auth-feedback-success"}`}
             role={notice.type === "error" ? "alert" : "status"}
+            style={{ marginBottom: '2rem' }}
           >
             {notice.message}
           </div>
         ) : null}
 
-        <div className="workspace-dashboard-grid">
-          <aside className="workspace-sidebar">
-            <WorkspaceCreateForm onCreate={handleCreateWorkspace} />
-            <section className="workspace-panel">
-              <div className="workspace-form-header">
-                <h2 className="workspace-section-title">Tus espacios</h2>
-                <p className="workspace-section-copy">
-                  Elige un espacio para consultar sus detalles y permisos disponibles.
-                </p>
+        {isLoading ? <div className="workspace-panel">Cargando espacios...</div> : null}
+
+        {!isLoading && !selectedWorkspace ? (
+          <section className="workspace-panel workspace-empty-state">
+            <h2 className="workspace-section-title">Tu panel esta listo</h2>
+            <p className="workspace-section-copy">
+              Crea un espacio desde la opción superior o acepta una invitacion existente para ver
+              datos compartidos.
+            </p>
+          </section>
+        ) : null}
+
+        {selectedWorkspace ? (
+          <div className="workspace-main-column" style={{ maxWidth: '100%' }}>
+            {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
+            
+            {activeTab === "home" && (
+              <div className="home-grid">
+                <div className="home-column">
+                  <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
+                  <WorkspaceMembersList members={members} />
+                  <WorkspaceInvitationsPanel
+                    workspace={selectedWorkspace}
+                    invitations={invitations}
+                    latestInvitationToken={latestInvitationToken}
+                    onCreateInvitation={handleCreateInvitation}
+                    onRevokeInvitation={handleRevokeInvitation}
+                  />
+                  <TransactionsPanel
+                    workspaceId={selectedWorkspace.id}
+                    mode="recent"
+                    onTransactionsChanged={handleTransactionsChanged}
+                  />
+                </div>
+                <div className="home-column">
+                  <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
+                  <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="readonly" />
+                </div>
               </div>
-              <WorkspaceList
-                workspaces={workspaces}
-                selectedWorkspaceId={selectedWorkspaceId}
-                onSelect={(workspaceId) => {
-                  void handleSelectWorkspace(workspaceId);
+            )}
+
+            {activeTab === "movimientos" && (
+              <TransactionsPanel
+                workspaceId={selectedWorkspace.id}
+                mode="crud"
+                onTransactionsChanged={() => {
+                  void handleTransactionsChanged();
                 }}
               />
-            </section>
-          </aside>
+            )}
 
-          <div className="workspace-main-column">
-            {isLoading ? <div className="workspace-panel">Cargando espacios...</div> : null}
+            {activeTab === "cuentas" && (
+              <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="crud" />
+            )}
 
-            {!isLoading && !selectedWorkspace ? (
-              <section className="workspace-panel workspace-empty-state">
-                <h2 className="workspace-section-title">Tu panel esta listo</h2>
-                <p className="workspace-section-copy">
-                  Crea un espacio desde la columna lateral o acepta una invitacion existente para ver
-                  datos compartidos.
-                </p>
-              </section>
-            ) : null}
-
-            {selectedWorkspace ? (
-              <>
-                {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
-                <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
-                <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
-                <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
-                <CategoriesPanel workspaceId={selectedWorkspace.id} />
-                <TransactionsPanel
-                  workspaceId={selectedWorkspace.id}
-                  onTransactionsChanged={() => {
-                    void handleTransactionsChanged();
-                  }}
-                />
-                <WorkspaceMembersList members={members} />
-                <WorkspaceInvitationsPanel
-                  workspace={selectedWorkspace}
-                  invitations={invitations}
-                  latestInvitationToken={latestInvitationToken}
-                  onCreateInvitation={handleCreateInvitation}
-                  onRevokeInvitation={handleRevokeInvitation}
-                />
-              </>
-            ) : null}
+            {activeTab === "categorias" && (
+              <CategoriesPanel workspaceId={selectedWorkspace.id} mode="crud" />
+            )}
           </div>
-        </div>
-      </section>
-    </main>
+        ) : null}
+      </main>
+    </>
   );
 }
