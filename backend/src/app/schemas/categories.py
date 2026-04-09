@@ -13,6 +13,7 @@ class CategoryCreateRequest(BaseModel):
     type: CategoryType
     icon: str = Field(min_length=1, max_length=64)
     color: str = Field(min_length=1, max_length=32)
+    parent_id: UUID | None = None
 
 
 class CategoryUpdateRequest(BaseModel):
@@ -20,6 +21,7 @@ class CategoryUpdateRequest(BaseModel):
     type: CategoryType | None = None
     icon: str | None = Field(default=None, min_length=1, max_length=64)
     color: str | None = Field(default=None, min_length=1, max_length=32)
+    parent_id: UUID | None = None
 
 
 class CategoryResponse(BaseModel):
@@ -27,6 +29,7 @@ class CategoryResponse(BaseModel):
 
     id: UUID
     workspace_id: UUID
+    parent_id: UUID | None
     name: str
     type: CategoryType
     icon: str

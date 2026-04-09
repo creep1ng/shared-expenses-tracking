@@ -106,6 +106,7 @@ class CategoryRepository:
         category_type: CategoryType,
         icon: str,
         color: str,
+        parent_id: UUID | None = None,
     ) -> Category:
         category = Category(
             workspace_id=workspace_id,
@@ -113,6 +114,7 @@ class CategoryRepository:
             type=category_type,
             icon=icon,
             color=color,
+            parent_id=parent_id,
         )
         self._session.add(category)
         self._session.flush()

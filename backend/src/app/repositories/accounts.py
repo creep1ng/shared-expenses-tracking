@@ -37,10 +37,15 @@ class AccountRepository:
         self._session.refresh(account)
         return account
 
-    def list_by_workspace(self, *, workspace_id: UUID, include_archived: bool) -> list[Account]:
+    def list_by_workspace(
+        self, *, workspace_id: UUID, user_id: UUID, include_archived: bool
+    ) -> list[Account]:
         statement = self._base_query().where(Account.workspace_id == workspace_id)
         if not include_archived:
             statement = statement.where(Account.archived_at.is_(None))
+        statement = statement.where(
+            (Account.owner_user_id.is_(None)) | (Account.owner_user_id == user_id)
+        )
         statement = statement.order_by(Account.created_at.asc())
         return list(self._session.scalars(statement).all())
 

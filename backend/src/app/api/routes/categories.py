@@ -32,6 +32,7 @@ def create_category(
         category_type=payload.type,
         icon=payload.icon,
         color=payload.color,
+        parent_id=payload.parent_id,
     )
     return _build_category_response(category)
 

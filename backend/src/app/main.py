@@ -7,6 +7,7 @@ from app.api.routes.categories import router as categories_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.health import router as health_router
 from app.api.routes.net_balances import router as net_balances_router
+from app.api.routes.scheduled_payments import router as scheduled_payments_router
 from app.api.routes.transactions import router as transactions_router
 from app.api.routes.workspaces import router as workspaces_router
 from app.core.config import Settings, get_settings
@@ -38,6 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(dashboard_router, prefix=app_settings.api_v1_prefix)
     app.include_router(transactions_router, prefix=app_settings.api_v1_prefix)
     app.include_router(net_balances_router, prefix=app_settings.api_v1_prefix)
+    app.include_router(scheduled_payments_router, prefix=app_settings.api_v1_prefix)
 
     return app
 

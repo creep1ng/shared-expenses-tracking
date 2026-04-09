@@ -32,6 +32,7 @@ class CategoryService:
         category_type: CategoryType,
         icon: str,
         color: str,
+        parent_id: UUID | None = None,
     ) -> Category:
         self._workspace_service.get_workspace_access(
             workspace_id=workspace_id,
@@ -46,6 +47,21 @@ class CategoryService:
             category_type=category_type,
         )
 
+        if parent_id is not None:
+            parent_category = self._get_category_or_404(
+                workspace_id=workspace_id, category_id=parent_id
+            )
+            if parent_category.type != category_type:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Parent category must be of the same type.",
+                )
+            if parent_category.archived_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Cannot use archived category as parent.",
+                )
+
         try:
             category = self._categories.create(
                 workspace_id=workspace_id,
@@ -53,6 +69,7 @@ class CategoryService:
                 category_type=category_type,
                 icon=normalized_icon,
                 color=normalized_color,
+                parent_id=parent_id,
             )
             self._session.commit()
         except IntegrityError as exc:
@@ -117,6 +134,29 @@ class CategoryService:
         updated_color = (
             self._normalize_color(str(updates["color"])) if "color" in updates else category.color
         )
+        updated_parent_id = updates.get("parent_id", category.parent_id)
+
+        if "parent_id" in updates and updated_parent_id is not None:
+            parent_category = self._get_category_or_404(
+                workspace_id=workspace_id, category_id=updated_parent_id
+            )
+            if parent_category.type != updated_type:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Parent category must be of the same type.",
+                )
+            if parent_category.archived_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Cannot use archived category as parent.",
+                )
+            # Validar que no se crea un bucle recursivo
+            if self._would_create_cycle(category.id, updated_parent_id):
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Cannot set parent: this would create a cycle in category hierarchy.",
+                )
+
         self._ensure_active_name_available(
             workspace_id=workspace_id,
             name=updated_name,
@@ -131,6 +171,7 @@ class CategoryService:
                 category_type=updated_type,
                 icon=updated_icon,
                 color=updated_color,
+                parent_id=updated_parent_id,
             )
             self._session.commit()
         except IntegrityError as exc:
@@ -224,6 +265,23 @@ class CategoryService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=self.DUPLICATE_ACTIVE_CATEGORY_DETAIL,
             )
+
+    def _would_create_cycle(self, category_id: UUID, new_parent_id: UUID) -> bool:
+        """Check if setting new_parent_id as parent of category_id would create a cycle."""
+        visited = set()
+        current_id = new_parent_id
+
+        while current_id is not None:
+            if current_id == category_id:
+                return True
+            if current_id in visited:
+                return True  # Existing cycle somewhere up, just prevent
+            visited.add(current_id)
+
+            current = self._categories.get_by_id_raw(current_id)
+            current_id = current.parent_id if current else None
+
+        return False
 
     @staticmethod
     def _is_duplicate_name_error(exc: IntegrityError) -> bool:

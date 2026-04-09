@@ -29,6 +29,7 @@ class AccountResponse(BaseModel):
 
     id: UUID
     workspace_id: UUID
+    owner_user_id: UUID | None
     name: str
     type: AccountType
     currency: str

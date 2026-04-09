@@ -73,6 +73,7 @@ class AccountService:
         )
         return self._accounts.list_by_workspace(
             workspace_id=workspace_id,
+            user_id=current_user.id,
             include_archived=include_archived,
         )
 

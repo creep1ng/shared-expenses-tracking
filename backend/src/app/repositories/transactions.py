@@ -47,12 +47,37 @@ class TransactionRepository:
         self._session.refresh(transaction)
         return transaction
 
-    def list_by_workspace(self, *, workspace_id: UUID) -> list[Transaction]:
+    def list_by_workspace(
+        self,
+        *,
+        workspace_id: UUID,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[UUID] | None = None,
+        search: str | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
+    ) -> list[Transaction]:
         statement = (
             self._base_query()
             .where(Transaction.workspace_id == workspace_id)
             .order_by(Transaction.occurred_at.desc(), Transaction.created_at.desc())
         )
+
+        if date_from is not None:
+            statement = statement.where(Transaction.occurred_at >= date_from)
+        if date_to is not None:
+            statement = statement.where(Transaction.occurred_at <= date_to)
+        if category_ids is not None and category_ids:
+            statement = statement.where(Transaction.category_id.in_(category_ids))
+        if search is not None and search.strip():
+            search_term = f"%{search.strip().lower()}%"
+            statement = statement.where(func.lower(Transaction.description).like(search_term))
+        if offset is not None:
+            statement = statement.offset(offset)
+        if limit is not None:
+            statement = statement.limit(limit)
+
         return list(self._session.scalars(statement).all())
 
     def list_by_workspace_and_user(self, *, workspace_id: UUID, user_id: UUID) -> list[Transaction]:

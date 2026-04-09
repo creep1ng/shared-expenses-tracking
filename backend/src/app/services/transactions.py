@@ -111,7 +111,17 @@ class TransactionService:
         )
 
     def list_transactions(
-        self, *, workspace_id: UUID, current_user: User, filter_user_id: UUID | None = None
+        self,
+        *,
+        workspace_id: UUID,
+        current_user: User,
+        filter_user_id: UUID | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        category_ids: list[UUID] | None = None,
+        search: str | None = None,
+        offset: int | None = None,
+        limit: int | None = None,
     ) -> list[Transaction]:
         self._workspace_service.get_workspace_access(
             workspace_id=workspace_id,
@@ -121,7 +131,15 @@ class TransactionService:
             return self._transactions.list_by_workspace_and_user(
                 workspace_id=workspace_id, user_id=filter_user_id
             )
-        return self._transactions.list_by_workspace(workspace_id=workspace_id)
+        return self._transactions.list_by_workspace(
+            workspace_id=workspace_id,
+            date_from=date_from,
+            date_to=date_to,
+            category_ids=category_ids,
+            search=search,
+            offset=offset,
+            limit=limit,
+        )
 
     def get_transaction(
         self,

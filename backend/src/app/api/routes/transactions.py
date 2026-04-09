@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from datetime import datetime
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 
 from app.api.dependencies.auth import get_current_user
 from app.api.dependencies.transactions import get_transaction_service
@@ -41,6 +42,12 @@ def create_transaction(
 def list_transactions(
     workspace_id: UUID,
     user_id: UUID | None = None,
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    category_ids: list[UUID] | None = Query(default=None),
+    search: str | None = Query(default=None),
+    offset: int | None = Query(default=None, ge=0),
+    limit: int | None = Query(default=None, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     transaction_service: TransactionService = Depends(get_transaction_service),
 ) -> TransactionListResponse:
@@ -48,6 +55,12 @@ def list_transactions(
         workspace_id=workspace_id,
         current_user=current_user,
         filter_user_id=user_id,
+        date_from=date_from,
+        date_to=date_to,
+        category_ids=category_ids,
+        search=search,
+        offset=offset,
+        limit=limit,
     )
     return TransactionListResponse(
         transactions=[_build_transaction_response(transaction) for transaction in transactions]
