@@ -278,6 +278,12 @@ class Account(TimestampMixin, Base):
         nullable=False,
         index=True,
     )
+    owner_user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     type: Mapped[AccountType] = mapped_column(
         SAEnum(
@@ -308,6 +314,7 @@ class Account(TimestampMixin, Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="accounts")
+    owner_user: Mapped[User | None] = relationship("User")
     source_transactions: Mapped[list[Transaction]] = relationship(
         back_populates="source_account",
         foreign_keys="Transaction.source_account_id",
@@ -330,6 +337,12 @@ class Category(TimestampMixin, Base):
         PGUUID(as_uuid=True),
         ForeignKey("workspaces.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    parent_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("categories.id", ondelete="SET NULL"),
+        nullable=True,
         index=True,
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
@@ -361,6 +374,10 @@ class Category(TimestampMixin, Base):
     )
 
     workspace: Mapped[Workspace] = relationship(back_populates="categories")
+    parent: Mapped[Category | None] = relationship(
+        "Category", remote_side=[id], back_populates="children"
+    )
+    children: Mapped[list[Category]] = relationship("Category", back_populates="parent")
     transactions: Mapped[list[Transaction]] = relationship(back_populates="category")
 
     @property
@@ -438,3 +455,52 @@ class Transaction(TimestampMixin, Base):
         back_populates="paid_transactions",
         foreign_keys=[paid_by_user_id],
     )
+
+
+class ScheduledPaymentFrequency(str, Enum):
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+
+
+class ScheduledPayment(TimestampMixin, Base):
+    __tablename__ = "scheduled_payments"
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    amount_minor: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    category_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    description: Mapped[str | None] = mapped_column(Text(), nullable=True)
+    frequency: Mapped[ScheduledPaymentFrequency] = mapped_column(
+        SAEnum(
+            ScheduledPaymentFrequency,
+            name="scheduled_payment_frequency",
+            native_enum=False,
+            values_callable=lambda enum_class: [item.value for item in enum_class],
+        ),
+        nullable=False,
+    )
+    next_due_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    last_executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean(), nullable=False, default=True, server_default="true"
+    )
+
+    workspace: Mapped[Workspace] = relationship()
+    category: Mapped[Category | None] = relationship()
