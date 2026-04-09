@@ -37,7 +37,7 @@ export type Transaction = {
   description: string | null;
   receipt_url: string | null;
   occurred_at: string;
-  split_config: Record<string, unknown> | null;
+  split_config: SplitConfig | null;
   source_account: TransactionAccountSummary | null;
   destination_account: TransactionAccountSummary | null;
   category: TransactionCategorySummary | null;
@@ -50,6 +50,16 @@ export type TransactionListResponse = {
   transactions: Transaction[];
 };
 
+export type SplitConfigItem = {
+  user_id: string;
+  amount_minor: number;
+  percentage: number | null;
+};
+
+export type SplitConfig = {
+  splits: SplitConfigItem[];
+};
+
 export type TransactionCreatePayload = {
   type: TransactionType;
   source_account_id: string | null;
@@ -60,7 +70,9 @@ export type TransactionCreatePayload = {
   currency: string;
   description?: string | null;
   occurred_at: string;
-  split_config?: Record<string, unknown> | null;
+  split_config?: SplitConfig | null;
+  tags?: string[];
+  location?: string | null;
 };
 
 export type TransactionUpdatePayload = Partial<TransactionCreatePayload>;

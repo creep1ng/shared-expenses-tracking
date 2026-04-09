@@ -2,11 +2,12 @@
 
 import React from "react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import type { Account } from "@/lib/accounts/types";
 import type { Category } from "@/lib/categories/types";
+import type { WorkspaceMember } from "@/lib/workspaces/types";
 import { transactionFormSchema, type TransactionFormValues } from "@/lib/transactions/schemas";
 import {
   buildTransactionPayload,
@@ -27,11 +28,16 @@ export const DEFAULT_TRANSACTION_FORM_VALUES: TransactionFormValues = {
   amount: "0.00",
   occurredAt: getCurrentDateTimeInputValue(),
   description: "",
+  isSplit: false,
+  splits: [],
+  tags: [],
+  location: "",
 };
 
 type TransactionFormProps = {
   accounts: Account[];
   categories: Category[];
+  members: WorkspaceMember[];
   defaultValues?: TransactionFormValues;
   submitLabel: string;
   submittingLabel: string;
@@ -45,6 +51,7 @@ type TransactionFormProps = {
 export function TransactionForm({
   accounts,
   categories,
+  members,
   defaultValues = DEFAULT_TRANSACTION_FORM_VALUES,
   submitLabel,
   submittingLabel,
@@ -71,6 +78,40 @@ export function TransactionForm({
     () => getSelectableTransactionCategories(categories, transactionType),
     [categories, transactionType],
   );
+
+  // Construir árbol jerárquico de categorías con indentación
+  const hierarchicalCategories = useMemo(() => {
+    const buildTree = (parentId: string | null, depth: number = 0): Array<{ category: Category; depth: number }> => {
+      const result: Array<{ category: Category; depth: number }> = [];
+      const children = selectableCategories.filter(c => c.parent_id === parentId);
+      
+      children.forEach(child => {
+        result.push({ category: child, depth });
+        result.push(...buildTree(child.id, depth + 1));
+      });
+      
+      return result;
+    };
+
+    return buildTree(null);
+  }, [selectableCategories]);
+
+  // Split fields array
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "splits",
+  });
+
+  const isSplit = useWatch({ control: form.control, name: "isSplit" });
+  const amount = useWatch({ control: form.control, name: "amount" });
+
+  // Calcular suma actual de splits
+  const splitsSum = useMemo(() => {
+    if (!form.getValues().splits) return 0;
+    return form.getValues().splits.reduce((sum, split) => {
+      return sum + parseFloat((split.amount || "0").replace(',', '.'));
+    }, 0);
+  }, [form.watch("splits")]);
 
   const resolvedCurrency = useMemo(
     () => resolveTransactionCurrency({ type: transactionType, sourceAccountId, destinationAccountId }, accounts),
@@ -238,9 +279,9 @@ export function TransactionForm({
               {...form.register("categoryId")}
             >
               <option value="">Selecciona una categoria</option>
-              {selectableCategories.map((category) => (
+              {hierarchicalCategories.map(({ category, depth }) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {"\u00A0\u00A0".repeat(depth)}{depth > 0 ? "└ " : ""}{category.name}
                 </option>
               ))}
             </select>
@@ -250,6 +291,74 @@ export function TransactionForm({
           </label>
         ) : null}
       </div>
+
+      {/* Toggle para dividir gasto */}
+      {transactionType === "expense" && members.length > 1 ? (
+        <div className="auth-field mb-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              {...form.register("isSplit")}
+            />
+            <span className="text-sm font-medium">Dividir gasto entre miembros</span>
+          </label>
+        </div>
+      ) : null}
+
+      {/* Campos dinámicos de splits */}
+      {isSplit && (
+        <div className="mb-6 space-y-3">
+          <div className="text-sm text-gray-500 mb-2 flex justify-between">
+            <span>Distribución del gasto:</span>
+            <span className={Math.abs(parseFloat(amount.replace(',', '.')) - splitsSum) > 0.01 ? "text-red-500 font-semibold" : "text-green-600 font-semibold"}>
+              Total: {splitsSum.toFixed(2)} / {amount}
+            </span>
+          </div>
+
+          {fields.map((field, index) => (
+            <div key={field.id} className="flex gap-2 items-center">
+              <select
+                className="auth-input flex-1"
+                {...form.register(`splits.${index}.memberId`)}
+              >
+                <option value="">Selecciona miembro</option>
+                {members.map(member => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.email}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                inputMode="decimal"
+                className="auth-input w-32"
+                placeholder="0.00"
+                {...form.register(`splits.${index}.amount`)}
+              />
+              <button
+                type="button"
+                onClick={() => remove(index)}
+                className="text-red-500 hover:text-red-700 px-2"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => append({ memberId: "", amount: "0.00", percentage: 0 })}
+            className="text-sm text-indigo-600 hover:text-indigo-800"
+          >
+            + Añadir participante
+          </button>
+
+          {form.formState.errors.splits ? (
+            <span className="auth-field-error">{form.formState.errors.splits.message}</span>
+          ) : null}
+        </div>
+      )}
 
       <label className="auth-field" htmlFor={`${fieldIdPrefix}-description`}>
         <span className="auth-label">Descripcion</span>
@@ -287,7 +396,37 @@ export function TransactionForm({
         </label>
       ) : null}
 
-      <div className="transaction-form-hint" aria-live="polite">
+      {/* Acordeón campos avanzados */}
+      <details className="mt-4 border rounded-md">
+        <summary className="p-3 cursor-pointer text-sm font-medium">
+          Opciones avanzadas
+        </summary>
+        <div className="p-3 space-y-4 border-t">
+          <label className="auth-field" htmlFor={`${fieldIdPrefix}-tags`}>
+            <span className="auth-label">Etiquetas</span>
+            <input
+              id={`${fieldIdPrefix}-tags`}
+              className="auth-input"
+              type="text"
+              placeholder="separadas por comas"
+              onChange={(e) => form.setValue("tags", e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+            />
+          </label>
+
+          <label className="auth-field" htmlFor={`${fieldIdPrefix}-location`}>
+            <span className="auth-label">Ubicación</span>
+            <input
+              id={`${fieldIdPrefix}-location`}
+              className="auth-input"
+              type="text"
+              placeholder="Opcional"
+              {...form.register("location")}
+            />
+          </label>
+        </div>
+      </details>
+
+      <div className="transaction-form-hint mt-4" aria-live="polite">
         <strong>{TRANSACTION_TYPE_LABELS[transactionType]}</strong>
         <span>
           {transactionType === "transfer"

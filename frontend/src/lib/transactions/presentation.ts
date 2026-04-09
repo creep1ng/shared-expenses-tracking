@@ -122,6 +122,15 @@ export function buildTransactionPayload(
 
   const description = values.description?.trim() ?? "";
 
+  // Construir split_config si esta activado
+  const split_config = values.isSplit && values.splits && values.splits.length > 0 ? {
+    splits: values.splits.map(split => ({
+      user_id: split.memberId,
+      amount_minor: parseMoneyInputToMinorUnits(split.amount),
+      percentage: split.percentage ?? null,
+    }))
+  } : null;
+
   return {
     type: values.type,
     source_account_id: values.type === "income" ? null : sourceAccountId,
@@ -132,7 +141,9 @@ export function buildTransactionPayload(
     currency,
     description: description.length > 0 ? description : null,
     occurred_at: convertLocalDateTimeInputToIso(values.occurredAt),
-    split_config: null,
+    split_config,
+    tags: values.tags ?? [],
+    location: values.location ?? null,
   };
 }
 
@@ -145,6 +156,14 @@ export function toTransactionFormDefaults(transaction: Transaction): Transaction
     amount: formatMinorUnitsForInput(transaction.amount_minor),
     occurredAt: formatIsoDateTimeForInput(transaction.occurred_at),
     description: transaction.description ?? "",
+    isSplit: !!transaction.split_config,
+    splits: transaction.split_config?.splits?.map(split => ({
+      memberId: split.user_id,
+      amount: formatMinorUnitsForInput(split.amount_minor),
+      percentage: split.percentage,
+    })) ?? [],
+    tags: [],
+    location: "",
   };
 }
 

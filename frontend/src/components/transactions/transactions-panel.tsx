@@ -12,6 +12,8 @@ import { listAccounts } from "@/lib/accounts/api";
 import type { Account } from "@/lib/accounts/types";
 import { listCategories } from "@/lib/categories/api";
 import type { Category } from "@/lib/categories/types";
+import { listWorkspaceMembers } from "@/lib/workspaces/api";
+import type { WorkspaceMember } from "@/lib/workspaces/types";
 import {
   createTransaction,
   deleteTransaction,
@@ -70,6 +72,7 @@ function summaryToCategory(summary: TransactionCategorySummary): Category {
   return {
     id: summary.id,
     workspace_id: summary.workspace_id,
+    parent_id: null,
     name: summary.name,
     type: summary.type,
     icon: "",
@@ -112,6 +115,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [expandedTransactionId, setExpandedTransactionId] = useState<string | null>(null);
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
   const [transactionDetails, setTransactionDetails] = useState<Record<string, Transaction>>({});
@@ -123,10 +127,11 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
     setIsLoading(true);
 
     try {
-      const [transactionsResponse, accountsResponse, categoriesResponse] = await Promise.all([
+      const [transactionsResponse, accountsResponse, categoriesResponse, membersResponse] = await Promise.all([
         listTransactions(workspaceId),
         listAccounts(workspaceId),
         listCategories(workspaceId),
+        listWorkspaceMembers(workspaceId),
       ]);
 
       const sortedTransactions = sortTransactionsChronologically(transactionsResponse.transactions);
@@ -134,6 +139,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
       setTransactions(sortedTransactions);
       setAccounts(getSelectableTransactionAccounts(accountsResponse.accounts));
       setCategories(categoriesResponse.categories.filter((category) => !category.is_archived));
+      setMembers(membersResponse.members);
       setTransactionDetails({});
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -338,6 +344,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
           accounts={formAccounts}
           allowReceiptUpload
           categories={formCategories}
+          members={members}
           defaultValues={DEFAULT_TRANSACTION_FORM_VALUES}
           fieldIdPrefix={`transaction-create-${workspaceId}`}
           onSubmitTransaction={handleCreate}
@@ -501,6 +508,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged }: Transa
                           <TransactionForm
                             accounts={formAccounts}
                             categories={formCategories}
+                            members={members}
                             defaultValues={toTransactionFormDefaults(detailTransaction)}
                             fieldIdPrefix={`transaction-edit-${transaction.id}`}
                             onCancel={() => setEditingTransactionId(null)}

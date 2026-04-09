@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const splitItemSchema = z.object({
+  memberId: z.string().min(1, "Selecciona un miembro"),
+  amount: z.string().min(1, "Indica el importe"),
+  percentage: z.number().min(0).max(100).optional(),
+});
+
 export const transactionFormSchema = z
   .object({
     type: z.enum(["income", "expense", "transfer"]),
@@ -13,6 +19,10 @@ export const transactionFormSchema = z
       .regex(/^\d+(?:[.,]\d{1,2})?$/, "Introduce un importe valido con hasta 2 decimales."),
     occurredAt: z.string().trim().min(1, "Indica la fecha y hora del movimiento."),
     description: z.string().trim().max(1000, "La descripcion no puede superar 1000 caracteres.").optional(),
+    isSplit: z.boolean().default(false),
+    splits: z.array(splitItemSchema).optional(),
+    tags: z.array(z.string()).optional(),
+    location: z.string().optional(),
   })
   .superRefine((values, context) => {
     const sourceAccountId = values.sourceAccountId?.trim() ?? "";
@@ -102,6 +112,22 @@ export const transactionFormSchema = z
         message: "La transferencia debe usar cuentas distintas.",
         path: ["destinationAccountId"],
       });
+    }
+
+    // Validación de splits
+    if (values.isSplit && values.splits && values.splits.length > 0) {
+      const totalAmount = parseFloat(values.amount.replace(',', '.'));
+      const splitsSum = values.splits.reduce((sum, split) => {
+        return sum + parseFloat(split.amount.replace(',', '.'));
+      }, 0);
+
+      if (Math.abs(totalAmount - splitsSum) > 0.01) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `La suma de los splits (${splitsSum.toFixed(2)}) no coincide con el monto total (${totalAmount.toFixed(2)}).`,
+          path: ["splits"],
+        });
+      }
     }
   });
 

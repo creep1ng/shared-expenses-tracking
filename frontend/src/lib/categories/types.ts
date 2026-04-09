@@ -3,6 +3,7 @@ export type CategoryType = "income" | "expense";
 export type Category = {
   id: string;
   workspace_id: string;
+  parent_id: string | null;
   name: string;
   type: CategoryType;
   icon: string;
