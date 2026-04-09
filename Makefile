@@ -11,7 +11,8 @@ BACKEND_PORT ?= 8000
 
 help:
 	@printf "Available targets:\n"
-	@printf "  make dev        Run frontend and backend locally with hot reload\n"
+	@printf "  make dev        Run frontend, backend and worker locally with hot reload\n"
+	@printf "  make dev-worker Run only arq worker locally\n"
 	@printf "  make up         Start full Docker Compose stack\n"
 	@printf "  make down       Stop full Docker Compose stack\n"
 	@printf "  make migrate    Apply Alembic migrations in backend container\n"
@@ -37,7 +38,19 @@ dev:
 	@trap 'kill 0' EXIT; \
 		$(MAKE) --no-print-directory dev-backend & \
 		$(MAKE) --no-print-directory dev-frontend & \
+		$(MAKE) --no-print-directory dev-worker & \
 		wait
+
+dev-worker:
+	@if [ ! -d "$(BACKEND_DIR)" ]; then \
+		printf "Backend workspace %s is not scaffolded yet\n" "$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(BACKEND_DIR)/pyproject.toml" ]; then \
+		printf "Backend project manifest %s/pyproject.toml is missing\n" "$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
+	uv run --project "$(BACKEND_DIR)" arq app.core.worker.WorkerSettings
 
 dev-frontend:
 	@if [ ! -d "$(FRONTEND_DIR)" ]; then \
