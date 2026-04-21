@@ -9,7 +9,6 @@ import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { CategoriesPanel } from "@/components/categories/categories-panel";
 import { DashboardKpiOverview } from "@/components/dashboard/dashboard-kpi-overview";
 import { TransactionsPanel } from "@/components/transactions/transactions-panel";
-import { ScheduledPaymentsBanner } from "@/components/transactions/scheduled-payments-banner";
 import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { WorkspaceInvitationsPanel } from "@/components/workspaces/workspace-invitations-panel";
 import { WorkspaceList } from "@/components/workspaces/workspace-list";

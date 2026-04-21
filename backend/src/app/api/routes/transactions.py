@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
-from datetime import datetime
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 
 from app.api.dependencies.auth import get_current_user

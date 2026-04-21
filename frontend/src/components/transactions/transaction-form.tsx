@@ -107,8 +107,9 @@ export function TransactionForm({
 
   // Calcular suma actual de splits
   const splitsSum = useMemo(() => {
-    if (!form.getValues().splits) return 0;
-    return form.getValues().splits.reduce((sum, split) => {
+    const splits = form.getValues().splits;
+    if (!splits) return 0;
+    return splits.reduce((sum, split) => {
       return sum + parseFloat((split.amount || "0").replace(',', '.'));
     }, 0);
   }, [form.watch("splits")]);

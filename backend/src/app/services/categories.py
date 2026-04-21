@@ -268,8 +268,8 @@ class CategoryService:
 
     def _would_create_cycle(self, category_id: UUID, new_parent_id: UUID) -> bool:
         """Check if setting new_parent_id as parent of category_id would create a cycle."""
-        visited = set()
-        current_id = new_parent_id
+        visited: set[UUID] = set()
+        current_id: UUID | None = new_parent_id
 
         while current_id is not None:
             if current_id == category_id:

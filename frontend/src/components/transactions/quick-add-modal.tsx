@@ -25,7 +25,6 @@ import {
   buildTransactionPayload,
   getCurrentDateTimeInputValue,
   getSelectableTransactionCategories,
-  TRANSACTION_TYPE_LABELS,
   TRANSACTION_TYPE_OPTIONS,
 } from "@/lib/transactions/presentation";
 import type { Account } from "@/lib/accounts/types";
@@ -116,7 +115,7 @@ export function QuickAddModal({
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle className="text-xl font-medium">Nuevo movimiento</DialogTitle>
@@ -129,7 +128,7 @@ export function QuickAddModal({
           <Tabs
             defaultValue="expense"
             value={transactionType}
-            onValueChange={(v) => form.setValue("type", v as any, { shouldValidate: true })}
+            onValueChange={(v: string) => form.setValue("type", v as "income" | "expense" | "transfer", { shouldValidate: true })}
             className="w-full"
           >
             <TabsList className="grid grid-cols-3 w-full mb-4">
@@ -145,7 +144,6 @@ export function QuickAddModal({
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <Input
-                  ref={amountInputRef}
                   type="text"
                   inputMode="decimal"
                   placeholder="0.00"
@@ -159,7 +157,7 @@ export function QuickAddModal({
 
               <Select
                 value={form.watch("categoryId")}
-                onValueChange={(v) => form.setValue("categoryId", v, { shouldValidate: true })}
+                onValueChange={(v: string) => form.setValue("categoryId", v, { shouldValidate: true })}
               >
                 <SelectTrigger className="w-[180px] h-12">
                   <SelectValue placeholder="Categoría" />
@@ -184,7 +182,7 @@ export function QuickAddModal({
             {transactionType !== "income" && (
               <Select
                 value={form.watch("sourceAccountId")}
-                onValueChange={(v) => form.setValue("sourceAccountId", v, { shouldValidate: true })}
+                onValueChange={(v: string) => form.setValue("sourceAccountId", v, { shouldValidate: true })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Cuenta origen" />
@@ -202,7 +200,7 @@ export function QuickAddModal({
             {transactionType !== "expense" && (
               <Select
                 value={form.watch("destinationAccountId")}
-                onValueChange={(v) => form.setValue("destinationAccountId", v, { shouldValidate: true })}
+                onValueChange={(v: string) => form.setValue("destinationAccountId", v, { shouldValidate: true })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Cuenta destino" />

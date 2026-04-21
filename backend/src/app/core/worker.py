@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from arq import cron
 from arq.connections import RedisSettings
@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.config import get_settings
 from app.db.models import ScheduledPayment, ScheduledPaymentFrequency, Transaction, TransactionType
-
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +88,7 @@ async def process_scheduled_payments(ctx: dict[str, Any]) -> None:
 
             except Exception as e:
                 logger.error(
-                    f"Failed to process scheduled payment {payment.id}: {str(e)}", exc_info=True
+                    f"Failed to process scheduled payment {payment.id}: {e!s}", exc_info=True
                 )
                 await session.rollback()
                 continue
@@ -116,12 +115,11 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
 
-    functions = [
+    functions: ClassVar[list[Any]] = [
         process_scheduled_payments,
     ]
 
-    cron_jobs = [
-        # Ejecutar diariamente a medianoche UTC
+    cron_jobs: ClassVar[list[Any]] = [
         cron(
             process_scheduled_payments,
             hour=0,

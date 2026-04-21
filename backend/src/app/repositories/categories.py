@@ -169,15 +169,20 @@ class CategoryRepository:
         category_type: CategoryType,
         icon: str,
         color: str,
+        parent_id: UUID | None = None,
     ) -> Category:
         category.name = name
         category.type = category_type
         category.icon = icon
         category.color = color
+        category.parent_id = parent_id
         self._session.add(category)
         self._session.flush()
         self._session.refresh(category)
         return category
+
+    def get_by_id_raw(self, category_id: UUID) -> Category | None:
+        return self._session.get(Category, category_id)
 
     def archive(self, category: Category, *, archived_at: datetime) -> Category:
         category.archived_at = archived_at

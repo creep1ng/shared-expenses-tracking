@@ -160,7 +160,7 @@ export function toTransactionFormDefaults(transaction: Transaction): Transaction
     splits: transaction.split_config?.splits?.map(split => ({
       memberId: split.user_id,
       amount: formatMinorUnitsForInput(split.amount_minor),
-      percentage: split.percentage,
+      percentage: split.percentage ?? undefined,
     })) ?? [],
     tags: [],
     location: "",

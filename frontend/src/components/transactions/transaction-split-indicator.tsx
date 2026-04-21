@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { Transaction } from "@/lib/transactions/types";
 import type { WorkspaceMember } from "@/lib/workspaces/types";
-import { formatCurrencyMinor } from "@/lib/shared/currency";
+import { formatMinorUnitsAsCurrency } from "@/lib/accounts/presentation";
 
 type SplitMemberAllocation = {
   user_id: string;
@@ -33,20 +33,18 @@ export function TransactionSplitIndicator({
     return null;
   }
 
-  const allocations: SplitMemberAllocation[] = Object.entries(
-    transaction.split_config as Record<string, { amount_minor: number; percentage: number }>
-  ).map(([userId, config]) => ({
-    user_id: userId,
-    amount_minor: config.amount_minor,
-    percentage: config.percentage,
-    is_payer: transaction.paid_by_user_id === userId,
+  const allocations: SplitMemberAllocation[] = (transaction.split_config?.splits ?? []).map((item) => ({
+    user_id: item.user_id,
+    amount_minor: item.amount_minor,
+    percentage: item.percentage ?? 0,
+    is_payer: transaction.paid_by_user_id === item.user_id,
   }));
 
   const currentUserAllocation = allocations.find((a) => a.user_id === currentUserId);
 
   const getMemberLabel = (userId: string) => {
     const member = members.find((m) => m.user_id === userId);
-    return member?.display_name || member?.email || userId;
+    return member?.email || userId;
   };
 
   const getMemberInitials = (userId: string) => {
@@ -70,13 +68,13 @@ export function TransactionSplitIndicator({
       return {
         type: "positive" as const,
         amount: net,
-        label: `Te deben ${formatCurrencyMinor(net, transaction.currency)}`,
+        label: `Te deben ${formatMinorUnitsAsCurrency(net, transaction.currency)}`,
       };
     } else {
       return {
         type: "negative" as const,
         amount: userOwes,
-        label: `Debes ${formatCurrencyMinor(userOwes, transaction.currency)}`,
+        label: `Debes ${formatMinorUnitsAsCurrency(userOwes, transaction.currency)}`,
       };
     }
   };
@@ -113,7 +111,7 @@ export function TransactionSplitIndicator({
                 }`}
               >
                 {balanceStatus.type === "positive" ? "+" : "-"}
-                {formatCurrencyMinor(balanceStatus.amount, transaction.currency, { decimals: false })}
+                {formatMinorUnitsAsCurrency(balanceStatus.amount, transaction.currency)}
               </span>
             )}
           </div>
@@ -135,7 +133,7 @@ export function TransactionSplitIndicator({
                     <span className="text-sm">{getMemberLabel(allocation.user_id)}</span>
                   </div>
                   <span className="text-sm font-medium tabular-nums">
-                    {formatCurrencyMinor(allocation.amount_minor, transaction.currency)}
+                    {formatMinorUnitsAsCurrency(allocation.amount_minor, transaction.currency)}
                   </span>
                 </div>
               ))}
