@@ -6,6 +6,7 @@ import { ArrowLeft, UserPlus, X } from "lucide-react";
 
 import { WorkspaceCreateForm } from "@/components/workspaces/workspace-create-form";
 import { createWorkspace, createWorkspaceInvitation } from "@/lib/workspaces/api";
+import type { Workspace } from "@/lib/workspaces/types";
 import { getErrorMessage } from "@/lib/auth/errors";
 
 type Notice = {
@@ -16,7 +17,7 @@ type Notice = {
 export function WorkspaceCreatePage() {
   const router = useRouter();
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [createdWorkspace, setCreatedWorkspace] = useState<any>(null);
+  const [createdWorkspace, setCreatedWorkspace] = useState<Workspace | null>(null);
   const [emailsToInvite, setEmailsToInvite] = useState<string[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
   const [isInviting, setIsInviting] = useState(false);
@@ -48,10 +49,14 @@ export function WorkspaceCreatePage() {
   };
 
   const handleSkip = () => {
+    if (!createdWorkspace) return;
+
     router.push(`/?workspace=${createdWorkspace.id}`);
   };
 
   const handleInviteMembers = async () => {
+    if (!createdWorkspace) return;
+
     setIsInviting(true);
     try {
       if (emailsToInvite.length > 0) {
