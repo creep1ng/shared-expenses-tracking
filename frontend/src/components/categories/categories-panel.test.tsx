@@ -123,8 +123,7 @@ describe("CategoriesPanel", () => {
     await user.type(screen.getByLabelText(/^Nombre$/i), "Mascotas");
     await user.type(screen.getByLabelText(/^Buscar ícono$/i), "mascotas");
     await user.click(screen.getByRole("radio", { name: "Mascotas" }));
-    await user.clear(screen.getByLabelText(/^Color$/i));
-    await user.type(screen.getByLabelText(/^Color$/i), "#7c3aed");
+    await user.click(screen.getByRole("radio", { name: "Color #7C3AED" }));
     await user.click(screen.getByRole("button", { name: /crear categoría/i }));
 
     await waitFor(() => {
@@ -146,14 +145,12 @@ describe("CategoriesPanel", () => {
 
     const editNameInput = screen.getByLabelText("Nombre", { selector: "input[id='category-edit-cat-1-name']" });
     const editIconSearchInput = screen.getByLabelText("Buscar ícono", { selector: "input[id='category-edit-cat-1-icon-search']" });
-    const editColorInput = screen.getByLabelText("Color", { selector: "input[id='category-edit-cat-1-color']" });
 
     await user.clear(editNameInput);
     await user.type(editNameInput, "Supermercado");
     await user.type(editIconSearchInput, "supermercado");
     await user.click(screen.getByRole("radio", { name: "Supermercado" }));
-    await user.clear(editColorInput);
-    await user.type(editColorInput, "#2563eb");
+    await user.click(screen.getByRole("radio", { name: "Color #2563EB" }));
     await user.click(screen.getByRole("button", { name: /guardar/i }));
 
     await waitFor(() => {

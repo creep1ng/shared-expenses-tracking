@@ -17,6 +17,43 @@ export const DEFAULT_CATEGORY_FORM_VALUES: CategoryFormValues = {
   color: "#D97706",
 };
 
+const CATEGORY_COLOR_OPTIONS = [
+  "#D97706",
+  "#EA580C",
+  "#DC2626",
+  "#E11D48",
+  "#DB2777",
+  "#C026D3",
+  "#9333EA",
+  "#7C3AED",
+  "#4F46E5",
+  "#2563EB",
+  "#0284C7",
+  "#0891B2",
+  "#0D9488",
+  "#059669",
+  "#16A34A",
+  "#65A30D",
+  "#84CC16",
+  "#CA8A04",
+  "#A16207",
+  "#92400E",
+  "#78716C",
+  "#52525B",
+  "#374151",
+  "#111827",
+] as const;
+
+function getColorOptions(currentColor: string): string[] {
+  const normalizedColor = currentColor.trim().toUpperCase();
+
+  if (!normalizedColor || CATEGORY_COLOR_OPTIONS.includes(normalizedColor as (typeof CATEGORY_COLOR_OPTIONS)[number])) {
+    return [...CATEGORY_COLOR_OPTIONS];
+  }
+
+  return [normalizedColor, ...CATEGORY_COLOR_OPTIONS];
+}
+
 type CategoryFormProps = {
   defaultValues?: CategoryFormValues;
   submitLabel: string;
@@ -43,6 +80,8 @@ export function CategoryForm({
     defaultValues,
   });
   const selectedIcon = form.watch("icon");
+  const selectedColor = form.watch("color");
+  const colorOptions = getColorOptions(selectedColor || defaultValues.color);
 
   const visibleIconOptions = CATEGORY_ICON_OPTIONS.filter((option) => {
     const normalizedSearch = iconSearch.trim().toLocaleLowerCase("es");
@@ -83,8 +122,8 @@ export function CategoryForm({
   });
 
   return (
-    <form className="workspace-form" onSubmit={onSubmit} noValidate>
-      <div className="entity-split-grid">
+    <form className="workspace-form category-form" onSubmit={onSubmit} noValidate>
+      <div className="category-form-grid">
         <label className="auth-field" htmlFor={`${fieldIdPrefix}-name`}>
           <span className="auth-label">Nombre</span>
           <input
@@ -119,7 +158,7 @@ export function CategoryForm({
           ) : null}
         </label>
 
-        <fieldset className="auth-field category-icon-picker">
+        <fieldset className="auth-field category-picker-field category-icon-picker">
           <legend className="auth-label" id={`${fieldIdPrefix}-icon-label`}>
             Ícono
           </legend>
@@ -172,20 +211,43 @@ export function CategoryForm({
           ) : null}
         </fieldset>
 
-        <label className="auth-field" htmlFor={`${fieldIdPrefix}-color`}>
-          <span className="auth-label">Color</span>
-          <input
-            id={`${fieldIdPrefix}-color`}
-            className="auth-input"
-            type="text"
-            placeholder="#D97706"
+        <fieldset className="auth-field category-picker-field category-color-picker">
+          <legend className="auth-label" id={`${fieldIdPrefix}-color-label`}>
+            Color
+          </legend>
+          <input id={`${fieldIdPrefix}-color`} type="hidden" {...form.register("color")} />
+          <div
+            className="category-color-grid"
+            role="radiogroup"
+            aria-labelledby={`${fieldIdPrefix}-color-label`}
             aria-invalid={Boolean(form.formState.errors.color)}
-            {...form.register("color")}
-          />
+          >
+            {colorOptions.map((color) => {
+              const normalizedColor = color.toUpperCase();
+              const isSelected = selectedColor.toUpperCase() === normalizedColor;
+
+              return (
+                <button
+                  key={normalizedColor}
+                  className={`category-color-option${isSelected ? " category-color-option-selected" : ""}`}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  aria-label={`Color ${normalizedColor}`}
+                  title={normalizedColor}
+                  onClick={() => {
+                    form.setValue("color", normalizedColor, { shouldDirty: true, shouldValidate: true });
+                  }}
+                >
+                  <span aria-hidden="true" style={{ backgroundColor: normalizedColor }} />
+                </button>
+              );
+            })}
+          </div>
           {form.formState.errors.color ? (
             <span className="auth-field-error">{form.formState.errors.color.message}</span>
           ) : null}
-        </label>
+        </fieldset>
       </div>
 
       <div className="entity-actions">
