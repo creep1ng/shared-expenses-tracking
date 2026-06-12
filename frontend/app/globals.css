@@ -165,6 +165,18 @@ textarea {
   gap: 0.4rem;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .auth-label,
 .dashboard-stat-label {
   font-size: 0.9rem;
@@ -678,6 +690,176 @@ textarea {
   font-size: 1.35rem;
   font-weight: 700;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.category-form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+}
+
+.category-picker-field {
+  grid-column: 1 / -1;
+}
+
+.category-icon-picker {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.category-icon-search {
+  display: block;
+}
+
+.category-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr));
+  max-height: min(14rem, 42vh);
+  gap: 0.55rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+  border-radius: 18px;
+  scrollbar-gutter: stable;
+}
+
+.category-icon-grid[aria-invalid="true"] {
+  box-shadow: 0 0 0 4px rgba(171, 60, 47, 0.09);
+}
+
+.category-icon-option {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  min-width: 0;
+  min-height: 4.75rem;
+  padding: 0.65rem 0.45rem;
+  border: 1px solid rgba(90, 60, 130, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.category-icon-option span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-icon-option:hover,
+.category-icon-option:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(150, 103, 224, 0.12);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.category-icon-option-selected {
+  border-color: var(--accent);
+  background: rgba(150, 103, 224, 0.14);
+  color: var(--accent-strong);
+}
+
+.category-icon-empty {
+  margin: 0;
+  padding: 0.75rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.category-color-picker {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.category-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+  gap: 0.55rem;
+  padding: 0.25rem;
+  border-radius: 18px;
+}
+
+.category-color-grid[aria-invalid="true"] {
+  box-shadow: 0 0 0 4px rgba(171, 60, 47, 0.09);
+}
+
+.category-color-option {
+  position: relative;
+  display: inline-grid;
+  min-width: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0.3rem;
+  border: 1px solid rgba(90, 60, 130, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: border-color 180ms ease, outline-color 180ms ease, transform 180ms ease;
+}
+
+.category-color-option span {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(26, 21, 37, 0.18);
+  border-radius: 11px;
+}
+
+.category-color-option:hover,
+.category-color-option:focus-visible {
+  border-color: var(--accent);
+  outline: 3px solid rgba(150, 103, 224, 0.34);
+  outline-offset: 2px;
+  transform: translateY(-1px);
+}
+
+.category-color-option-selected {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.category-color-option-selected::after {
+  position: absolute;
+  right: 0.18rem;
+  bottom: 0.18rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: var(--foreground);
+  content: "";
+}
+
+@media (max-width: 480px), (max-height: 520px) and (orientation: landscape) {
+  .category-icon-grid {
+    grid-template-columns: repeat(auto-fill, minmax(4.9rem, 1fr));
+    max-height: 10.5rem;
+  }
+
+  .category-icon-option {
+    min-height: 4.25rem;
+    font-size: 0.74rem;
+  }
+
+  .category-color-grid {
+    grid-template-columns: repeat(auto-fill, minmax(2.1rem, 1fr));
+  }
+
+  .category-color-option {
+    border-radius: 14px;
+  }
 }
 
 .transaction-card {

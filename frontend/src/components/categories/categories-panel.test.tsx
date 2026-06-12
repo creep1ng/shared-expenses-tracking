@@ -62,6 +62,7 @@ describe("CategoriesPanel", () => {
 
     expect(await screen.findByText("Comida")).toBeInTheDocument();
     expect(screen.queryByText("Archivada")).not.toBeInTheDocument();
+    expect(screen.queryByText("utensils-crossed")).not.toBeInTheDocument();
     expect(listCategoriesMock).toHaveBeenCalledWith("workspace-1");
   });
 
@@ -120,10 +121,9 @@ describe("CategoriesPanel", () => {
 
     await user.clear(screen.getByLabelText(/^Nombre$/i));
     await user.type(screen.getByLabelText(/^Nombre$/i), "Mascotas");
-    await user.clear(screen.getByLabelText(/^Ícono$/i));
-    await user.type(screen.getByLabelText(/^Ícono$/i), "paw-print");
-    await user.clear(screen.getByLabelText(/^Color$/i));
-    await user.type(screen.getByLabelText(/^Color$/i), "#7c3aed");
+    await user.type(screen.getByLabelText(/^Buscar ícono$/i), "mascotas");
+    await user.click(screen.getByRole("radio", { name: "Mascotas" }));
+    await user.click(screen.getByRole("radio", { name: "Color #7C3AED" }));
     await user.click(screen.getByRole("button", { name: /crear categoría/i }));
 
     await waitFor(() => {
@@ -144,15 +144,13 @@ describe("CategoriesPanel", () => {
     await user.click(within(originalCategoryCard as HTMLElement).getByRole("button", { name: /editar/i }));
 
     const editNameInput = screen.getByLabelText("Nombre", { selector: "input[id='category-edit-cat-1-name']" });
-    const editIconInput = screen.getByLabelText("Ícono", { selector: "input[id='category-edit-cat-1-icon']" });
-    const editColorInput = screen.getByLabelText("Color", { selector: "input[id='category-edit-cat-1-color']" });
+    const editIconSearchInput = screen.getByLabelText("Buscar ícono", { selector: "input[id='category-edit-cat-1-icon-search']" });
 
     await user.clear(editNameInput);
     await user.type(editNameInput, "Supermercado");
-    await user.clear(editIconInput);
-    await user.type(editIconInput, "shopping-basket");
-    await user.clear(editColorInput);
-    await user.type(editColorInput, "#2563eb");
+    await user.type(editIconSearchInput, "supermercado");
+    await user.click(screen.getByRole("radio", { name: "Supermercado" }));
+    await user.click(screen.getByRole("radio", { name: "Color #2563EB" }));
     await user.click(screen.getByRole("button", { name: /guardar/i }));
 
     await waitFor(() => {
