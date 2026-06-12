@@ -10,11 +10,11 @@ export const workspaceUpdateSchema = z.object({
 });
 
 export const workspaceInvitationSchema = z.object({
-  email: z.string().trim().email("Introduce un correo electronico valido."),
+  email: z.string().trim().email("Introduce un correo electrónico válido."),
 });
 
 export const acceptWorkspaceInvitationSchema = z.object({
-  token: z.string().trim().min(20, "Introduce un token de invitacion valido."),
+  token: z.string().trim().min(20, "Introduce un token de invitación válido."),
 });
 
 export type WorkspaceCreateValues = z.infer<typeof workspaceCreateSchema>;

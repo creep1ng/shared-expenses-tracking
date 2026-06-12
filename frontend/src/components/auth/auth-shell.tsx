@@ -13,13 +13,13 @@ export function AuthShell({ children }: AuthShellProps) {
           <span className="auth-kicker">Shared Expenses</span>
           <h2 className="auth-panel-title">Control de acceso simple y seguro.</h2>
           <p className="auth-panel-copy-text">
-            La autenticacion depende del backend y de sesiones por cookie HTTP only. El frontend
-            consume el estado real de la sesion sin guardar tokens en localStorage.
+            La autenticación depende del backend y de sesiones por cookie HTTP only. El frontend
+            consume el estado real de la sesión sin guardar tokens en localStorage.
           </p>
-          <div className="auth-panel-points" aria-label="Principios de autenticacion">
+          <div className="auth-panel-points" aria-label="Principios de autenticación">
             <article>
-              <strong>Sesion persistente</strong>
-              <p>La sesion se mantiene tras refrescar mientras la cookie siga vigente.</p>
+              <strong>Sesión persistente</strong>
+              <p>La sesión se mantiene tras refrescar mientras la cookie siga vigente.</p>
             </article>
             <article>
               <strong>Backend como fuente de verdad</strong>

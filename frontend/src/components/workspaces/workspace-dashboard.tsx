@@ -181,7 +181,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
       const invitation = await createWorkspaceInvitation(selectedWorkspaceId, values);
       setInvitations((currentInvitations) => [invitation, ...currentInvitations]);
       setLatestInvitationToken(invitation.invitation_token);
-      setNotice({ type: "success", message: `Invitacion creada para ${invitation.invited_email}.` });
+      setNotice({ type: "success", message: `Invitación creada para ${invitation.invited_email}.` });
       return true;
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -203,7 +203,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
           invitation.id === revokedInvitation.id ? revokedInvitation : invitation,
         ),
       );
-      setNotice({ type: "success", message: `Invitacion revocada para ${revokedInvitation.invited_email}.` });
+      setNotice({ type: "success", message: `Invitación revocada para ${revokedInvitation.invited_email}.` });
       return true;
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -226,7 +226,7 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
           <div
             className={`auth-feedback ${notice.type === "error" ? "auth-feedback-error" : "auth-feedback-success"}`}
             role={notice.type === "error" ? "alert" : "status"}
-            style={{ marginBottom: '2rem' }}
+            style={{ marginBottom: "2rem" }}
           >
             {notice.message}
           </div>
@@ -236,21 +236,25 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
 
         {!isLoading && !selectedWorkspace ? (
           <section className="workspace-panel workspace-empty-state">
-            <h2 className="workspace-section-title">Tu panel esta listo</h2>
+            <h2 className="workspace-section-title">Tu panel está listo</h2>
             <p className="workspace-section-copy">
-              Crea un espacio desde la opción superior o acepta una invitacion existente para ver
+              Crea un espacio desde la opción superior o acepta una invitación existente para ver
               datos compartidos.
             </p>
           </section>
         ) : null}
 
         {selectedWorkspace ? (
-          <div className="workspace-main-column" style={{ maxWidth: '100%' }}>
+          <div className="workspace-main-column" style={{ maxWidth: "100%" }}>
             {isRefreshingWorkspace ? <div className="workspace-loading-bar">Actualizando datos...</div> : null}
             
             {activeTab === "home" && (
               <div className="home-grid">
-                <div className="home-column">
+                <div className="home-column home-column-financial">
+                  <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
+                  <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="readonly" />
+                </div>
+                <div className="home-column home-column-context">
                   <WorkspaceSummary workspace={selectedWorkspace} onRename={handleRenameWorkspace} />
                   <WorkspaceMembersList members={members} />
                   <WorkspaceInvitationsPanel
@@ -265,10 +269,6 @@ export function WorkspaceDashboard({ user, initialWorkspaceId = null }: Workspac
                     mode="recent"
                     onTransactionsChanged={handleTransactionsChanged}
                   />
-                </div>
-                <div className="home-column">
-                  <DashboardKpiOverview workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} />
-                  <AccountsPanel workspaceId={selectedWorkspace.id} refreshNonce={accountsRefreshNonce} mode="readonly" />
                 </div>
               </div>
             )}

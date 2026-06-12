@@ -111,6 +111,7 @@ describe("AccountsPanel", () => {
     render(<AccountsPanel workspaceId="workspace-1" />);
 
     await screen.findByText("Cuenta principal");
+    await user.click(screen.getByRole("button", { name: /nueva cuenta/i }));
 
     await user.clear(screen.getByLabelText(/^Nombre$/i));
     await user.type(screen.getByLabelText(/^Nombre$/i), "Tarjeta viaje");
@@ -119,8 +120,8 @@ describe("AccountsPanel", () => {
     await user.type(screen.getByLabelText(/^Moneda$/i), "usd");
     await user.clear(screen.getByLabelText(/^Saldo inicial$/i));
     await user.type(screen.getByLabelText(/^Saldo inicial$/i), "-45.50");
-    await user.clear(screen.getByLabelText(/^Descripcion$/i));
-    await user.type(screen.getByLabelText(/^Descripcion$/i), "Reserva hotel");
+    await user.clear(screen.getByLabelText(/^Descripción$/i));
+    await user.type(screen.getByLabelText(/^Descripción$/i), "Reserva hotel");
     await user.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
     await waitFor(() => {
@@ -146,7 +147,7 @@ describe("AccountsPanel", () => {
     const editBalanceInput = screen.getByLabelText("Saldo inicial", {
       selector: "input[id='account-edit-acc-1-initial-balance']",
     });
-    const editDescriptionInput = screen.getByLabelText("Descripcion", {
+    const editDescriptionInput = screen.getByLabelText("Descripción", {
       selector: "textarea[id='account-edit-acc-1-description']",
     });
 
@@ -228,7 +229,7 @@ describe("AccountsPanel", () => {
 
     rerender(<AccountsPanel workspaceId="workspace-1" refreshNonce={1} />);
 
-    expect(await screen.findByText((content) => content.includes("1010,50") && content.includes("€"))).toBeInTheDocument();
+    expect(await screen.findByText(/€\s*1\.010,50/)).toBeInTheDocument();
     expect(listAccountsMock).toHaveBeenCalledTimes(2);
   });
 });

@@ -52,7 +52,7 @@ export function SignUpForm() {
         <AuthErrorBanner message={submitError} />
 
         <label className="auth-field" htmlFor="email">
-          <span className="auth-label">Correo electronico</span>
+          <span className="auth-label">Correo electrónico</span>
           <input
             autoComplete="email"
             className="auth-input"
@@ -67,7 +67,7 @@ export function SignUpForm() {
         </label>
 
         <label className="auth-field" htmlFor="password">
-          <span className="auth-label">Contrasena</span>
+          <span className="auth-label">Contraseña</span>
           <input
             autoComplete="new-password"
             className="auth-input"

@@ -230,14 +230,14 @@ export function TransactionForm({
 
         {transactionType !== "transfer" ? (
           <label className="auth-field" htmlFor={`${fieldIdPrefix}-category`}>
-            <span className="auth-label">Categoria</span>
+            <span className="auth-label">Categoría</span>
             <select
               id={`${fieldIdPrefix}-category`}
               className="auth-input"
               aria-invalid={Boolean(form.formState.errors.categoryId)}
               {...form.register("categoryId")}
             >
-              <option value="">Selecciona una categoria</option>
+              <option value="">Selecciona una categoría</option>
               {selectableCategories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
@@ -252,7 +252,7 @@ export function TransactionForm({
       </div>
 
       <label className="auth-field" htmlFor={`${fieldIdPrefix}-description`}>
-        <span className="auth-label">Descripcion</span>
+        <span className="auth-label">Descripción</span>
         <textarea
           id={`${fieldIdPrefix}-description`}
           className="auth-input auth-textarea"
@@ -292,10 +292,10 @@ export function TransactionForm({
         <span>
           {transactionType === "transfer"
             ? resolvedCurrency
-              ? ` Se registrara en ${resolvedCurrency} y no pedira categoria.`
+              ? ` Se registrará en ${resolvedCurrency} y no pedirá categoría.`
               : " Selecciona dos cuentas con la misma moneda para registrar la transferencia."
             : resolvedCurrency
-              ? ` Se registrara en ${resolvedCurrency}.`
+              ? ` Se registrará en ${resolvedCurrency}.`
               : " La moneda se toma de la cuenta seleccionada."}
         </span>
       </div>

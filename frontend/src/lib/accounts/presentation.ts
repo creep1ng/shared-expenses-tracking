@@ -5,7 +5,7 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   cash: "Efectivo",
   bank_account: "Cuenta bancaria",
   savings_account: "Cuenta de ahorro",
-  credit_card: "Tarjeta de credito",
+  credit_card: "Tarjeta de crédito",
 };
 
 export const ACCOUNT_TYPE_OPTIONS: Array<{ value: AccountType; label: string }> = [
@@ -27,9 +27,10 @@ export function parseMoneyInputToMinorUnits(value: string): number {
 }
 
 export function formatMinorUnitsAsCurrency(value: number, currency: string): string {
-  return new Intl.NumberFormat("es-ES", {
+  return new Intl.NumberFormat("es-CO", {
     style: "currency",
-    currency,
+    currency: currency.trim().toUpperCase() || "COP",
+    currencyDisplay: "narrowSymbol",
   }).format(value / 100);
 }
 

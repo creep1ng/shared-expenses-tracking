@@ -45,15 +45,15 @@ export function SignInForm() {
 
   return (
     <AuthCard
-      eyebrow="Iniciar sesion"
+      eyebrow="Iniciar sesión"
       title="Accede a tu cuenta"
-      description="Usa tu correo y contrasena para entrar a tu espacio de trabajo."
+      description="Usa tu correo y contraseña para entrar a tu espacio de trabajo."
     >
       <form className="auth-form" onSubmit={onSubmit} noValidate>
         <AuthErrorBanner message={submitError} />
 
         <label className="auth-field" htmlFor="email">
-          <span className="auth-label">Correo electronico</span>
+          <span className="auth-label">Correo electrónico</span>
           <input
             autoComplete="email"
             className="auth-input"
@@ -68,7 +68,7 @@ export function SignInForm() {
         </label>
 
         <label className="auth-field" htmlFor="password">
-          <span className="auth-label">Contrasena</span>
+          <span className="auth-label">Contraseña</span>
           <input
             autoComplete="current-password"
             className="auth-input"
@@ -88,7 +88,7 @@ export function SignInForm() {
 
         <div className="auth-links-row">
           <Link href={"/sign-up" as Route}>Crear cuenta</Link>
-          <Link href={"/password-reset/request" as Route}>Olvide mi contrasena</Link>
+          <Link href={"/password-reset/request" as Route}>Olvidé mi contraseña</Link>
         </div>
       </form>
     </AuthCard>

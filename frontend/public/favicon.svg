@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="KiloGastos">
+  <rect width="64" height="64" rx="18" fill="#f7f0dc" />
+  <path d="M17 43V21h30v22H17Z" fill="#2f2147" />
+  <path d="M22 27h20M22 34h11M22 41h16" stroke="#f7f0dc" stroke-width="3" stroke-linecap="round" />
+  <circle cx="45" cy="22" r="9" fill="#d97706" />
+  <path d="M41.5 22.5 44 25l5-6" fill="none" stroke="#2f2147" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

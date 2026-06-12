@@ -4,7 +4,7 @@ import React from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Modal } from "@/components/ui/modal";
-import { Plus } from "lucide-react";
+import { Plus, ReceiptText } from "lucide-react";
 import {
   DEFAULT_TRANSACTION_FORM_VALUES,
   TransactionForm,
@@ -281,7 +281,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
 
   const handleDelete = async (transaction: Transaction) => {
     const shouldDelete = window.confirm(
-      `Vas a eliminar el movimiento ${getTransactionHeadline(transaction)}. Esta accion actualizara los saldos afectados.`,
+      `Vas a eliminar el movimiento ${getTransactionHeadline(transaction)}. Esta acción actualizará los saldos afectados.`,
     );
 
     if (!shouldDelete) {
@@ -319,15 +319,15 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
   return (
     <section className="workspace-panel">
       {mode === "crud" ? (
-        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="workspace-form-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h2 className="workspace-section-title">Movimientos</h2>
             <p className="workspace-section-copy">
-              Registra ingresos, gastos y transferencias con detalle inline y orden cronologico.
+              Registra ingresos, gastos y transferencias con detalle inline y orden cronológico.
             </p>
           </div>
-           <button className="primary-action mobile-button-icon-only" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-             <Plus size={18} /> <span className="desktop-only">Nuevo movimiento</span>
+           <button className="primary-action mobile-button-icon-only" onClick={() => setIsCreateModalOpen(true)} aria-label="Nuevo movimiento" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+             <Plus size={18} aria-hidden="true" /> <span className="desktop-only">Nuevo movimiento</span>
            </button>
         </div>
       ) : (
@@ -350,7 +350,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
 
         {!isLoading && displayedTransactions.length === 0 ? (
           <p className="workspace-section-copy">
-            Todavia no hay movimientos.
+            Todavía no hay movimientos.
           </p>
         ) : null}
 
@@ -370,7 +370,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
                         <strong>{getTransactionHeadline(transaction)}</strong>
                         {transaction.receipt_url ? (
                           <span aria-label="Movimiento con recibo adjunto" title="Movimiento con recibo adjunto">
-                            📎
+                            <ReceiptText size={16} aria-hidden="true" />
                           </span>
                         ) : null}
                         <span className={`workspace-role-chip transaction-type-chip transaction-type-chip-${transaction.type}`}>
@@ -405,7 +405,7 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
                       }}
                       type="button"
                     >
-                      {isEditing ? "Cerrar edicion" : "Editar"}
+                      {isEditing ? "Cerrar edición" : "Editar"}
                     </button>
                     <button
                       className="secondary-action entity-danger-action"
@@ -445,15 +445,15 @@ export function TransactionsPanel({ workspaceId, onTransactionsChanged, mode = "
                             <dd>{detailTransaction.destination_account?.name ?? "-"}</dd>
                           </div>
                           <div>
-                            <dt>Categoria</dt>
+                            <dt>Categoría</dt>
                             <dd>{detailTransaction.category?.name ?? "No aplica"}</dd>
                           </div>
                           <div>
                             <dt>Pagado por</dt>
-                            <dd>{detailTransaction.paid_by_user?.email ?? "Sesion actual"}</dd>
+                            <dd>{detailTransaction.paid_by_user?.email ?? "Sesión actual"}</dd>
                           </div>
                           <div>
-                            <dt>Descripcion</dt>
+                            <dt>Descripción</dt>
                             <dd>{detailTransaction.description ?? "Sin detalle adicional"}</dd>
                           </div>
                           <div>

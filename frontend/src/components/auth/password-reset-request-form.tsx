@@ -48,8 +48,8 @@ export function PasswordResetRequestForm() {
   return (
     <AuthCard
       eyebrow="Recuperar acceso"
-      title="Solicita el reinicio de contrasena"
-      description="Ingresa tu correo y el backend emitira un token de recuperacion si la cuenta existe."
+      title="Solicita el reinicio de contraseña"
+      description="Ingresa tu correo y el backend emitirá un token de recuperación si la cuenta existe."
     >
       <form className="auth-form" onSubmit={onSubmit} noValidate>
         <AuthErrorBanner message={submitError} />
@@ -66,7 +66,7 @@ export function PasswordResetRequestForm() {
         ) : null}
 
         <label className="auth-field" htmlFor="email">
-          <span className="auth-label">Correo electronico</span>
+          <span className="auth-label">Correo electrónico</span>
           <input
             autoComplete="email"
             className="auth-input"
@@ -85,7 +85,7 @@ export function PasswordResetRequestForm() {
         </button>
 
         <div className="auth-links-row">
-          <Link href={"/sign-in" as Route}>Volver a iniciar sesion</Link>
+          <Link href={"/sign-in" as Route}>Volver a iniciar sesión</Link>
           <Link href={"/password-reset/confirm" as Route}>Ya tengo un token</Link>
         </div>
       </form>
