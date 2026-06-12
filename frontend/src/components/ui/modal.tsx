@@ -77,18 +77,18 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
     <div className="modal-backdrop" onClick={onClose}>
       <div
         ref={modalRef}
-        className="modal-content"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        tabIndex={-1}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="modal-content"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        tabIndex={-1}
       >
         <div className="modal-header">
           <div>
-            <h2 id={titleId} className="workspace-section-title" style={{ margin: 0 }}>{title}</h2>
-            {description && <p id={descriptionId} className="workspace-section-copy" style={{ marginTop: "0.25rem" }}>{description}</p>}
+            <h2 className="workspace-section-title" id={titleId} style={{ margin: 0 }}>{title}</h2>
+            {description && <p className="workspace-section-copy" id={descriptionId} style={{ marginTop: "0.25rem" }}>{description}</p>}
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar modal">
             <X size={20} aria-hidden="true" />

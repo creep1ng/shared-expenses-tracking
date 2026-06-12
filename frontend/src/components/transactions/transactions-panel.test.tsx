@@ -273,6 +273,8 @@ describe("TransactionsPanel", () => {
     await screen.findByText("Traspaso ahorro");
     await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
+    await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
+
     await user.clear(screen.getByLabelText(/^Importe$/i));
     await user.type(screen.getByLabelText(/^Importe$/i), "12.50");
     await user.selectOptions(screen.getByLabelText(/^Cuenta de origen$/i), "acc-1");
@@ -416,6 +418,8 @@ describe("TransactionsPanel", () => {
     render(<TransactionsPanel workspaceId="workspace-1" onTransactionsChanged={onTransactionsChanged} />);
 
     await screen.findByText("Traspaso ahorro");
+    await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
+
     await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
     await user.selectOptions(screen.getByLabelText(/tipo de movimiento/i), "transfer");

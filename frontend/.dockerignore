@@ -3,3 +3,11 @@ node_modules
 .git
 .env*
 *.md
+coverage
+playwright-report
+test-results
+.turbo
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
