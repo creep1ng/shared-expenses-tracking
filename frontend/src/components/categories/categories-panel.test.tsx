@@ -115,6 +115,8 @@ describe("CategoriesPanel", () => {
 
     await screen.findByText("Comida");
 
+    await user.click(screen.getByRole("button", { name: /nueva categoría/i }));
+
     await user.clear(screen.getByLabelText(/^Nombre$/i));
     await user.type(screen.getByLabelText(/^Nombre$/i), "Mascotas");
     await user.clear(screen.getByLabelText(/^Icono$/i));
@@ -150,7 +152,7 @@ describe("CategoriesPanel", () => {
     await user.type(editIconInput, "shopping-basket");
     await user.clear(editColorInput);
     await user.type(editColorInput, "#2563eb");
-    await user.click(screen.getByRole("button", { name: /guardar cambios/i }));
+    await user.click(screen.getByRole("button", { name: /guardar/i }));
 
     await waitFor(() => {
       expect(updateCategoryMock).toHaveBeenCalledWith("workspace-1", "cat-1", {

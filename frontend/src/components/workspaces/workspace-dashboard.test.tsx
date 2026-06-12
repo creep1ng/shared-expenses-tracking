@@ -166,7 +166,11 @@ describe("WorkspaceDashboard", () => {
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(screen.getByText("KPIs workspace-1 refresco 0")).toBeInTheDocument();
     expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /categorías/i }));
     expect(screen.getByText("Panel categorias workspace-1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /movimientos/i }));
     expect(screen.getByText("Panel movimientos workspace-1")).toBeInTheDocument();
   });
 

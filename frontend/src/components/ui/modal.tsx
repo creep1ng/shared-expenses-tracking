@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import { X } from "lucide-react";
 
 type ModalProps = {
@@ -12,6 +12,9 @@ type ModalProps = {
 };
 
 export function Modal({ isOpen, onClose, title, description, children }: ModalProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -30,11 +33,18 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        aria-describedby={description ? descriptionId : undefined}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+      >
         <div className="modal-header">
           <div>
-            <h2 className="workspace-section-title" style={{ margin: 0 }}>{title}</h2>
-            {description && <p className="workspace-section-copy" style={{ marginTop: "0.25rem" }}>{description}</p>}
+            <h2 className="workspace-section-title" id={titleId} style={{ margin: 0 }}>{title}</h2>
+            {description && <p className="workspace-section-copy" id={descriptionId} style={{ marginTop: "0.25rem" }}>{description}</p>}
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Cerrar modal">
             <X size={20} />

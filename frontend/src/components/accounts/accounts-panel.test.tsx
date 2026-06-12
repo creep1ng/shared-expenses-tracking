@@ -112,6 +112,8 @@ describe("AccountsPanel", () => {
 
     await screen.findByText("Cuenta principal");
 
+    await user.click(screen.getByRole("button", { name: /nueva cuenta/i }));
+
     await user.clear(screen.getByLabelText(/^Nombre$/i));
     await user.type(screen.getByLabelText(/^Nombre$/i), "Tarjeta viaje");
     await user.selectOptions(screen.getByLabelText(/^Tipo$/i), "credit_card");
