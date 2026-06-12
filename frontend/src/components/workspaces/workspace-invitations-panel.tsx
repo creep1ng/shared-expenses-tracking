@@ -71,7 +71,7 @@ export function WorkspaceInvitationsPanel({
         <div className="workspace-form-header">
           <h2 className="workspace-section-title">Invitaciones</h2>
           <p className="workspace-section-copy">
-            Invita por correo y comparte el token devuelto mientras el flujo de email aun no exista.
+            Invita por correo y comparte el token devuelto mientras el flujo de email aún no exista.
           </p>
         </div>
 
@@ -91,19 +91,19 @@ export function WorkspaceInvitationsPanel({
         </label>
 
         <button className="secondary-action workspace-inline-submit" type="submit" disabled={isCreating}>
-          {isCreating ? "Enviando..." : "Crear invitacion"}
+          {isCreating ? "Enviando..." : "Crear invitación"}
         </button>
       </form>
 
       {latestInvitationToken ? (
         <div className="auth-feedback auth-feedback-success" role="status">
-          Token de invitacion generado: <code>{latestInvitationToken}</code>
+          Token de invitación generado: <code>{latestInvitationToken}</code>
         </div>
       ) : null}
 
       <div className="workspace-invitation-list" aria-label="Invitaciones del espacio">
         {invitations.length === 0 ? (
-          <p className="workspace-section-copy">Todavia no hay invitaciones registradas para este espacio.</p>
+          <p className="workspace-section-copy">Todavía no hay invitaciones registradas para este espacio.</p>
         ) : null}
 
         {invitations.map((invitation) => {

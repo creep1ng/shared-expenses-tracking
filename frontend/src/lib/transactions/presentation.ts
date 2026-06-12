@@ -53,7 +53,7 @@ export function convertLocalDateTimeInputToIso(value: string): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Indica una fecha y hora validas.");
+    throw new Error("Indica una fecha y hora válidas.");
   }
 
   return date.toISOString();
@@ -183,7 +183,7 @@ export function getTransactionRouteLabel(transaction: Transaction): string {
     return `Desde ${transaction.source_account?.name ?? "cuenta desconocida"}`;
   }
 
-  return `${transaction.source_account?.name ?? "Cuenta origen"} -> ${transaction.destination_account?.name ?? "Cuenta destino"}`;
+  return `${transaction.source_account?.name ?? "Cuenta origen"} → ${transaction.destination_account?.name ?? "Cuenta destino"}`;
 }
 
 export function getTransactionHeadline(transaction: Transaction): string {
@@ -205,7 +205,7 @@ export function getTransactionMetaLabel(transaction: Transaction): string {
     return `${TRANSACTION_TYPE_LABELS.transfer} · ${dateLabel}`;
   }
 
-  return `${transaction.category?.name ?? "Sin categoria"} · ${dateLabel}`;
+  return `${transaction.category?.name ?? "Sin categoría"} · ${dateLabel}`;
 }
 
 export function formatTransactionOccurredAt(value: string): string {

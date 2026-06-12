@@ -98,7 +98,7 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: 
 
   const handleArchive = async (account: Account) => {
     const shouldArchive = window.confirm(
-      `Vas a archivar la cuenta ${account.name}. Seguira visible en el historial, pero dejara de aparecer como activa.`,
+      `Vas a archivar la cuenta ${account.name}. Seguirá visible en el historial, pero dejará de aparecer como activa.`,
     );
 
     if (!shouldArchive) {
@@ -124,14 +124,14 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: 
   return (
     <section className="workspace-panel">
       {mode === "crud" ? (
-        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="workspace-form-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h2 className="workspace-section-title">Cuentas</h2>
             <p className="workspace-section-copy">
               Gestiona las cuentas activas del espacio y revisa su saldo actual en una sola vista.
             </p>
           </div>
-          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Plus size={16} /> Nueva cuenta
           </button>
         </div>
@@ -155,7 +155,7 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: 
 
         {!isLoading && accounts.length === 0 ? (
           <p className="workspace-section-copy">
-            Todavia no hay cuentas activas.
+            Todavía no hay cuentas activas.
           </p>
         ) : null}
 
@@ -201,7 +201,7 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: 
                       onClick={() => setEditingAccountId(isEditing ? null : account.id)}
                       type="button"
                     >
-                      {isEditing ? "Cerrar edicion" : "Editar"}
+                      {isEditing ? "Cerrar edición" : "Editar"}
                     </button>
                     <button
                       className="secondary-action entity-danger-action"
@@ -243,7 +243,7 @@ export function AccountsPanel({ workspaceId, refreshNonce = 0, mode = "crud" }: 
           isOpen={isCreateModalOpen} 
           onClose={() => setIsCreateModalOpen(false)} 
           title="Nueva cuenta"
-          description="Registra efectivo, bancos, ahorros o tarjetas con su saldo inicial en moneda ISO."
+          description="Registra efectivo, bancos, ahorros o tarjetas con su saldo inicial en COP u otra moneda ISO."
         >
           <AccountForm
             defaultValues={DEFAULT_ACCOUNT_FORM_VALUES}

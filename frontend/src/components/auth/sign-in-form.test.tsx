@@ -36,7 +36,7 @@ describe("SignInForm", () => {
 
     await user.click(screen.getByRole("button", { name: /entrar/i }));
 
-    expect(await screen.findByText(/correo electronico valido/i)).toBeInTheDocument();
+    expect(await screen.findByText(/correo electrónico válido/i)).toBeInTheDocument();
     expect(screen.getByText(/al menos 8 caracteres/i)).toBeInTheDocument();
   });
 
@@ -46,8 +46,8 @@ describe("SignInForm", () => {
 
     render(<SignInForm />);
 
-    await user.type(screen.getByLabelText(/correo electronico/i), "user@example.com");
-    await user.type(screen.getByLabelText(/^contrasena$/i), "secret123");
+    await user.type(screen.getByLabelText(/correo electrónico/i), "user@example.com");
+    await user.type(screen.getByLabelText(/^contraseña$/i), "secret123");
     await user.click(screen.getByRole("button", { name: /entrar/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/invalid email or password/i);
@@ -59,8 +59,8 @@ describe("SignInForm", () => {
 
     render(<SignInForm />);
 
-    await user.type(screen.getByLabelText(/correo electronico/i), "user@example.com");
-    await user.type(screen.getByLabelText(/^contrasena$/i), "secret123");
+    await user.type(screen.getByLabelText(/correo electrónico/i), "user@example.com");
+    await user.type(screen.getByLabelText(/^contraseña$/i), "secret123");
     await user.click(screen.getByRole("button", { name: /entrar/i }));
 
     await waitFor(() => {

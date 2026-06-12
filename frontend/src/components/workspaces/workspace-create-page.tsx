@@ -32,7 +32,7 @@ export function WorkspaceCreatePage() {
   };
 
   const handleRemoveEmail = (emailToRemove: string) => {
-    setEmailsToInvite(emailsToInvite.filter(e => e !== emailToRemove));
+    setEmailsToInvite(emailsToInvite.filter((email) => email !== emailToRemove));
   };
 
   const handleCreate = async (values: { name: string; type: "personal" | "shared" }) => {
@@ -61,7 +61,7 @@ export function WorkspaceCreatePage() {
     try {
       if (emailsToInvite.length > 0) {
         await Promise.allSettled(
-          emailsToInvite.map(email => createWorkspaceInvitation(createdWorkspace.id, { email }))
+          emailsToInvite.map((email) => createWorkspaceInvitation(createdWorkspace.id, { email }))
         );
       }
       router.push(`/?workspace=${createdWorkspace.id}`);
@@ -76,7 +76,7 @@ export function WorkspaceCreatePage() {
     <>
       <nav className="top-nav">
         <div className="nav-links">
-          <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--accent-strong)' }}>
+          <div style={{ fontWeight: "bold", fontSize: "1.2rem", color: "var(--accent-strong)" }}>
             KiloGastos
           </div>
           <button className="nav-item" onClick={() => router.push("/")}>
@@ -85,13 +85,13 @@ export function WorkspaceCreatePage() {
         </div>
       </nav>
 
-      <main className="main-content" style={{ maxWidth: '600px', marginTop: '2rem' }}>
-        <section className="workspace-dashboard-card" style={{ padding: '2rem' }}>
+      <main className="main-content" style={{ maxWidth: "600px", marginTop: "2rem" }}>
+        <section className="workspace-dashboard-card" style={{ padding: "2rem" }}>
           {!createdWorkspace ? (
             <>
               <header className="workspace-form-header">
-                <h1 className="dashboard-title">Crear Nuevo Espacio</h1>
-                <p className="dashboard-copy" style={{ marginTop: '0.5rem' }}>
+                <h1 className="dashboard-title">Crear nuevo espacio</h1>
+                <p className="dashboard-copy" style={{ marginTop: "0.5rem" }}>
                   Configura un nuevo espacio de trabajo. Puedes ser personal o compartido.
                 </p>
               </header>
@@ -100,13 +100,13 @@ export function WorkspaceCreatePage() {
                 <div
                   className={`auth-feedback ${notice.type === "error" ? "auth-feedback-error" : "auth-feedback-success"}`}
                   role={notice.type === "error" ? "alert" : "status"}
-                  style={{ marginBottom: '2rem' }}
+                  style={{ marginBottom: "2rem" }}
                 >
                   {notice.message}
                 </div>
               ) : null}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
                 <WorkspaceCreateForm onCreate={handleCreate} />
               </div>
             </>
@@ -114,8 +114,8 @@ export function WorkspaceCreatePage() {
             <>
               <header className="workspace-form-header">
                 <h1 className="dashboard-title">¡Espacio creado!</h1>
-                <p className="dashboard-copy" style={{ marginTop: '0.5rem' }}>
-                  Tu espacio {createdWorkspace.name} ha sido creado exitosamente.
+                <p className="dashboard-copy" style={{ marginTop: "0.5rem" }}>
+                  Tu espacio {createdWorkspace.name} se creó correctamente.
                 </p>
               </header>
 
@@ -123,21 +123,21 @@ export function WorkspaceCreatePage() {
                 <div
                   className={`auth-feedback ${notice.type === "error" ? "auth-feedback-error" : "auth-feedback-success"}`}
                   role={notice.type === "error" ? "alert" : "status"}
-                  style={{ marginBottom: '1.5rem' }}
+                  style={{ marginBottom: "1.5rem" }}
                 >
                   {notice.message}
                 </div>
               ) : null}
 
-              <div className="workspace-panel" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--background)', border: '1px solid var(--surface-border)' }}>
+              <div className="workspace-panel" style={{ marginTop: "1.5rem", padding: "1.5rem", background: "var(--background)", border: "1px solid var(--surface-border)" }}>
                 <div className="workspace-form-header">
-                  <h3 className="workspace-section-title" style={{ fontSize: '1.1rem' }}>¿Quieres invitar miembros ahora?</h3>
-                  <p className="workspace-section-copy" style={{ marginBottom: '1rem' }}>
+                  <h3 className="workspace-section-title" style={{ fontSize: "1.1rem" }}>¿Quieres invitar integrantes ahora?</h3>
+                  <p className="workspace-section-copy" style={{ marginBottom: "1rem" }}>
                     Añade correos electrónicos de las personas que deseas invitar a este espacio.
                   </p>
                 </div>
 
-                <form onSubmit={handleAddEmail} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                <form onSubmit={handleAddEmail} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
                   <input
                     type="email"
                     placeholder="correo@ejemplo.com"
@@ -146,17 +146,17 @@ export function WorkspaceCreatePage() {
                     onChange={(e) => setCurrentEmail(e.target.value)}
                     style={{ flex: 1 }}
                   />
-                  <button type="submit" className="secondary-action" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button type="submit" className="secondary-action" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <UserPlus size={16} /> Añadir
                   </button>
                 </form>
 
                 {emailsToInvite.length > 0 && (
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem 0', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {emailsToInvite.map(email => (
-                      <li key={email} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1rem', background: 'var(--surface-strong)', borderRadius: '0.5rem' }}>
-                        <span style={{ fontSize: '0.9rem' }}>{email}</span>
-                        <button type="button" onClick={() => handleRemoveEmail(email)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1rem 0", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    {emailsToInvite.map((email) => (
+                      <li key={email} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 1rem", background: "var(--surface-strong)", borderRadius: "0.5rem" }}>
+                        <span style={{ fontSize: "0.9rem" }}>{email}</span>
+                        <button type="button" onClick={() => handleRemoveEmail(email)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--danger)" }}>
                           <X size={16} />
                         </button>
                       </li>
@@ -164,7 +164,7 @@ export function WorkspaceCreatePage() {
                   </ul>
                 )}
 
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap" }}>
                   <button 
                     className="secondary-action" 
                     onClick={handleSkip}
@@ -177,7 +177,7 @@ export function WorkspaceCreatePage() {
                     onClick={handleInviteMembers}
                     disabled={isInviting}
                   >
-                    {isInviting ? "Enviando invitaciones..." : "Invitar miembros"}
+                    {isInviting ? "Enviando invitaciones..." : "Invitar integrantes"}
                   </button>
                 </div>
               </div>

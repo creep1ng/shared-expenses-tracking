@@ -26,7 +26,7 @@ vi.mock("@/components/accounts/accounts-panel", () => ({
 }));
 
 vi.mock("@/components/categories/categories-panel", () => ({
-  CategoriesPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel categorias {workspaceId}</div>,
+  CategoriesPanel: ({ workspaceId }: { workspaceId: string }) => <div>Panel categorías {workspaceId}</div>,
 }));
 
 vi.mock("@/components/transactions/transactions-panel", () => ({
@@ -116,6 +116,8 @@ describe("WorkspaceDashboard", () => {
   });
 
   it("loads the selected workspace with owner actions", async () => {
+    const user = userEvent.setup();
+
     listWorkspacesMock.mockResolvedValue({ workspaces: [ownerWorkspace] });
     getWorkspaceMock.mockResolvedValue(ownerWorkspace);
     listWorkspaceMembersMock.mockResolvedValue({
@@ -161,17 +163,16 @@ describe("WorkspaceDashboard", () => {
 
     expect(await screen.findByRole("heading", { name: "Casa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /guardar nombre/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /crear invitacion/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /crear invitación/i })).toBeInTheDocument();
     expect(screen.getAllByText("owner@example.com")).toHaveLength(2);
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(screen.getByText("KPIs workspace-1 refresco 0")).toBeInTheDocument();
     expect(screen.getByText("Panel cuentas workspace-1 refresco 0")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /categorías/i }));
-    expect(screen.getByText("Panel categorias workspace-1")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /movimientos/i }));
     expect(screen.getByText("Panel movimientos workspace-1")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /categorías/i }));
+
+    expect(screen.getByText("Panel categorías workspace-1")).toBeInTheDocument();
   });
 
   it("hides owner-only invitation controls for members", async () => {
@@ -202,7 +203,7 @@ describe("WorkspaceDashboard", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Viaje" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /crear invitacion/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /crear invitación/i })).not.toBeInTheDocument();
     expect(screen.getByText(/solo la persona propietaria puede invitar o revocar accesos/i)).toBeInTheDocument();
     expect(listWorkspaceInvitationsMock).not.toHaveBeenCalled();
   });
@@ -244,7 +245,7 @@ describe("WorkspaceDashboard", () => {
     await screen.findByRole("heading", { name: "Casa" });
 
     await user.type(screen.getByLabelText(/correo a invitar/i), "nueva@example.com");
-    await user.click(screen.getByRole("button", { name: /crear invitacion/i }));
+    await user.click(screen.getByRole("button", { name: /crear invitación/i }));
 
     await waitFor(() => {
       expect(createWorkspaceInvitationMock).toHaveBeenCalledWith("workspace-1", {
@@ -252,7 +253,7 @@ describe("WorkspaceDashboard", () => {
       });
     });
 
-    expect(await screen.findByText(/token de invitacion generado/i)).toHaveTextContent(
+    expect(await screen.findByText(/token de invitación generado/i)).toHaveTextContent(
       "token-demo-12345678901234567890",
     );
     expect(screen.getByText("nueva@example.com")).toBeInTheDocument();

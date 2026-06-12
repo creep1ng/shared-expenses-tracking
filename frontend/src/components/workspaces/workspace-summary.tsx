@@ -45,7 +45,7 @@ export function WorkspaceSummary({ workspace, onRename }: WorkspaceSummaryProps)
           <span className="dashboard-eyebrow">Espacio activo</span>
           <h1 className="workspace-headline">{workspace.name}</h1>
           <p className="dashboard-copy">
-            Este tablero usa la sesion actual del backend y refleja el rol real devuelto por la API.
+            Este tablero usa la sesión actual del backend y refleja el rol real devuelto por la API.
           </p>
         </div>
       </div>
@@ -79,7 +79,7 @@ export function WorkspaceSummary({ workspace, onRename }: WorkspaceSummaryProps)
       {isOwner ? (
         <form className="workspace-form workspace-inline-form" onSubmit={onSubmit} noValidate>
           <div className="workspace-form-header">
-            <h2 className="workspace-section-title">Ajustes basicos</h2>
+            <h2 className="workspace-section-title">Ajustes básicos</h2>
             <p className="workspace-section-copy">
               Como persona propietaria, puedes renombrar el espacio y gestionar invitaciones.
             </p>

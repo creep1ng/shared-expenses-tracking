@@ -66,8 +66,8 @@ export function InvitationAcceptForm({ initialToken = null }: InvitationAcceptFo
 
   return (
     <AuthCard
-      eyebrow="Invitacion"
-      title="Aceptar invitacion"
+      eyebrow="Invitación"
+      title="Aceptar invitación"
       description="Usa el token emitido por la API para unirte a un espacio compartido existente."
     >
       <form className="auth-form" onSubmit={onSubmit} noValidate>
@@ -80,7 +80,7 @@ export function InvitationAcceptForm({ initialToken = null }: InvitationAcceptFo
         ) : null}
 
         <label className="auth-field" htmlFor="invitation-token">
-          <span className="auth-label">Token de invitacion</span>
+          <span className="auth-label">Token de invitación</span>
           <input
             id="invitation-token"
             className="auth-input"
@@ -94,7 +94,7 @@ export function InvitationAcceptForm({ initialToken = null }: InvitationAcceptFo
         </label>
 
         <button className="primary-action auth-submit" type="submit" disabled={isPending}>
-          {isPending ? "Aceptando..." : "Aceptar invitacion"}
+          {isPending ? "Aceptando..." : "Aceptar invitación"}
         </button>
 
         <div className="auth-links-row">

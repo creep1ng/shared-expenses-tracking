@@ -61,11 +61,11 @@ describe("DashboardKpiOverview", () => {
       });
     });
 
-    expect(await screen.findByText("1550,00 ARS")).toBeInTheDocument();
-    expect(screen.getByText("200,00 ARS")).toBeInTheDocument();
-    expect(screen.getByText("50,00 ARS")).toBeInTheDocument();
-    expect(screen.getByText("150,00 ARS")).toBeInTheDocument();
-    expect(screen.getByText(/del 11 feb al 12 mar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/\$\s*1\.550,00/)).toBeInTheDocument();
+    expect(screen.getByText(/\$\s*200,00/)).toBeInTheDocument();
+    expect(screen.getByText(/\$\s*50,00/)).toBeInTheDocument();
+    expect(screen.getByText(/\$\s*150,00/)).toBeInTheDocument();
+    expect(screen.getByText(/del 11 de feb al 12 de mar/i)).toBeInTheDocument();
   });
 
   it("reloads KPI data when the selected preset changes", async () => {
@@ -139,9 +139,9 @@ describe("DashboardKpiOverview", () => {
 
     render(<DashboardKpiOverview today={today} workspaceId="workspace-1" />);
 
-    expect(await screen.findByText("1000,00 ARS")).toBeInTheDocument();
+    expect(await screen.findByText(/\$\s*1\.000,00/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /ultimos 7 dias/i }));
+    await user.click(screen.getByRole("button", { name: /últimos 7 días/i }));
 
     await waitFor(() => {
       expect(getWorkspaceDashboardKpisMock).toHaveBeenNthCalledWith(2, "workspace-1", {
@@ -150,8 +150,8 @@ describe("DashboardKpiOverview", () => {
       });
     });
 
-    expect(await screen.findByText("990,00 ARS")).toBeInTheDocument();
-    expect(screen.getByText(/del 6 mar al 12 mar/i)).toBeInTheDocument();
+    expect(await screen.findByText(/\$\s*990,00/)).toBeInTheDocument();
+    expect(screen.getByText(/del 6 de mar al 12 de mar/i)).toBeInTheDocument();
   });
 
   it("renders no-data and mixed-currency states gracefully", async () => {

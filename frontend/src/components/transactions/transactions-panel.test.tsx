@@ -203,7 +203,7 @@ describe("TransactionsPanel", () => {
     const cards = screen.getAllByRole("article");
 
     expect(within(cards[0]).getByText("Transferencia")).toBeInTheDocument();
-    expect(within(cards[0]).getByText("Cuenta principal -> Ahorro viaje")).toBeInTheDocument();
+    expect(within(cards[0]).getByText("Cuenta principal → Ahorro viaje")).toBeInTheDocument();
     expect(within(cards[1]).getByText("Ingreso")).toBeInTheDocument();
   });
 
@@ -271,15 +271,16 @@ describe("TransactionsPanel", () => {
     render(<TransactionsPanel workspaceId="workspace-1" onTransactionsChanged={onTransactionsChanged} />);
 
     await screen.findByText("Traspaso ahorro");
+    await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
     await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
     await user.clear(screen.getByLabelText(/^Importe$/i));
     await user.type(screen.getByLabelText(/^Importe$/i), "12.50");
     await user.selectOptions(screen.getByLabelText(/^Cuenta de origen$/i), "acc-1");
-    await user.selectOptions(screen.getByLabelText(/^Categoria$/i), "cat-2");
-    await user.clear(screen.getByLabelText(/^Descripcion$/i));
-    await user.type(screen.getByLabelText(/^Descripcion$/i), "Cafe oficina");
+    await user.selectOptions(screen.getByLabelText(/^Categoría$/i), "cat-2");
+    await user.clear(screen.getByLabelText(/^Descripción$/i));
+    await user.type(screen.getByLabelText(/^Descripción$/i), "Cafe oficina");
     await user.clear(screen.getByLabelText(/^Fecha y hora$/i));
     await user.type(screen.getByLabelText(/^Fecha y hora$/i), formatDateForInput(validDate));
     const receiptFile = new File(["receipt"], "cafe-oficina.jpg", { type: "image/jpeg" });
@@ -374,7 +375,7 @@ describe("TransactionsPanel", () => {
     const amountInput = screen.getByLabelText("Importe", {
       selector: "input[id='transaction-edit-tx-1-amount']",
     });
-    const descriptionInput = screen.getByLabelText("Descripcion", {
+    const descriptionInput = screen.getByLabelText("Descripción", {
       selector: "textarea[id='transaction-edit-tx-1-description']",
     });
     const occurredAtInput = screen.getByLabelText("Fecha y hora", {
@@ -417,12 +418,13 @@ describe("TransactionsPanel", () => {
     render(<TransactionsPanel workspaceId="workspace-1" onTransactionsChanged={onTransactionsChanged} />);
 
     await screen.findByText("Traspaso ahorro");
+    await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
     await user.click(screen.getByRole("button", { name: /nuevo movimiento/i }));
 
     await user.selectOptions(screen.getByLabelText(/tipo de movimiento/i), "transfer");
 
-    expect(screen.queryByLabelText(/^Categoria$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Categoría$/i)).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText(/^Cuenta de origen$/i), "acc-1");
     await user.selectOptions(screen.getByLabelText(/^Cuenta de destino$/i), "acc-1");

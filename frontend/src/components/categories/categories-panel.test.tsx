@@ -114,16 +114,17 @@ describe("CategoriesPanel", () => {
     render(<CategoriesPanel workspaceId="workspace-1" />);
 
     await screen.findByText("Comida");
+    await user.click(screen.getByRole("button", { name: /nueva categoría/i }));
 
     await user.click(screen.getByRole("button", { name: /nueva categoría/i }));
 
     await user.clear(screen.getByLabelText(/^Nombre$/i));
     await user.type(screen.getByLabelText(/^Nombre$/i), "Mascotas");
-    await user.clear(screen.getByLabelText(/^Icono$/i));
-    await user.type(screen.getByLabelText(/^Icono$/i), "paw-print");
+    await user.clear(screen.getByLabelText(/^Ícono$/i));
+    await user.type(screen.getByLabelText(/^Ícono$/i), "paw-print");
     await user.clear(screen.getByLabelText(/^Color$/i));
     await user.type(screen.getByLabelText(/^Color$/i), "#7c3aed");
-    await user.click(screen.getByRole("button", { name: /crear categoria/i }));
+    await user.click(screen.getByRole("button", { name: /crear categoría/i }));
 
     await waitFor(() => {
       expect(createCategoryMock).toHaveBeenCalledWith("workspace-1", {
@@ -143,7 +144,7 @@ describe("CategoriesPanel", () => {
     await user.click(within(originalCategoryCard as HTMLElement).getByRole("button", { name: /editar/i }));
 
     const editNameInput = screen.getByLabelText("Nombre", { selector: "input[id='category-edit-cat-1-name']" });
-    const editIconInput = screen.getByLabelText("Icono", { selector: "input[id='category-edit-cat-1-icon']" });
+    const editIconInput = screen.getByLabelText("Ícono", { selector: "input[id='category-edit-cat-1-icon']" });
     const editColorInput = screen.getByLabelText("Color", { selector: "input[id='category-edit-cat-1-color']" });
 
     await user.clear(editNameInput);

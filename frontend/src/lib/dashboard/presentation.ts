@@ -9,9 +9,9 @@ type DashboardPreset = {
 };
 
 export const DASHBOARD_PRESETS: DashboardPreset[] = [
-  { key: "last_7_days", label: "Ultimos 7 dias", days: 7 },
-  { key: "last_30_days", label: "Ultimos 30 dias", days: 30 },
-  { key: "last_90_days", label: "Ultimos 90 dias", days: 90 },
+  { key: "last_7_days", label: "Últimos 7 días", days: 7 },
+  { key: "last_30_days", label: "Últimos 30 días", days: 30 },
+  { key: "last_90_days", label: "Últimos 90 días", days: 90 },
 ];
 
 export const DEFAULT_DASHBOARD_PRESET_KEY: DashboardPresetKey = "last_30_days";
@@ -46,7 +46,7 @@ export function getDashboardPresetRange(presetKey: DashboardPresetKey, now: Date
 }
 
 export function formatDashboardRangeLabel(dateRange: Pick<DashboardDateRange, "start_date" | "end_date">): string {
-  const formatter = new Intl.DateTimeFormat("es-ES", {
+  const formatter = new Intl.DateTimeFormat("es-CO", {
     day: "numeric",
     month: "short",
     timeZone: "UTC",

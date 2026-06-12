@@ -10,9 +10,9 @@ export const transactionFormSchema = z
       .string()
       .trim()
       .min(1, "Indica el importe del movimiento.")
-      .regex(/^\d+(?:[.,]\d{1,2})?$/, "Introduce un importe valido con hasta 2 decimales."),
+      .regex(/^\d+(?:[.,]\d{1,2})?$/, "Introduce un importe válido con hasta 2 decimales."),
     occurredAt: z.string().trim().min(1, "Indica la fecha y hora del movimiento."),
-    description: z.string().trim().max(1000, "La descripcion no puede superar 1000 caracteres.").optional(),
+    description: z.string().trim().max(1000, "La descripción no puede superar 1000 caracteres.").optional(),
   })
   .superRefine((values, context) => {
     const sourceAccountId = values.sourceAccountId?.trim() ?? "";
@@ -22,7 +22,7 @@ export const transactionFormSchema = z
     if (Number.isNaN(new Date(values.occurredAt).getTime())) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Indica una fecha y hora validas.",
+        message: "Indica una fecha y hora válidas.",
         path: ["occurredAt"],
       });
       return;
@@ -52,7 +52,7 @@ export const transactionFormSchema = z
       if (!categoryId) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Selecciona una categoria de ingreso.",
+          message: "Selecciona una categoría de ingreso.",
           path: ["categoryId"],
         });
       }
@@ -72,7 +72,7 @@ export const transactionFormSchema = z
       if (!categoryId) {
         context.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Selecciona una categoria de gasto.",
+          message: "Selecciona una categoría de gasto.",
           path: ["categoryId"],
         });
       }

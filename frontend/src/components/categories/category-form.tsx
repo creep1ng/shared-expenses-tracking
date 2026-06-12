@@ -75,7 +75,7 @@ export function CategoryForm({
             id={`${fieldIdPrefix}-name`}
             className="auth-input"
             type="text"
-            placeholder="Ej. Alimentacion"
+            placeholder="Ej. Alimentación"
             aria-invalid={Boolean(form.formState.errors.name)}
             {...form.register("name")}
           />
@@ -104,7 +104,7 @@ export function CategoryForm({
         </label>
 
         <label className="auth-field" htmlFor={`${fieldIdPrefix}-icon`}>
-          <span className="auth-label">Icono</span>
+          <span className="auth-label">Ícono</span>
           <input
             id={`${fieldIdPrefix}-icon`}
             className="auth-input"

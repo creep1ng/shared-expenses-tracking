@@ -4,7 +4,7 @@ import type {
   WorkspaceType,
 } from "@/lib/workspaces/types";
 
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("es-ES", {
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("es-CO", {
   dateStyle: "medium",
   timeStyle: "short",
 });

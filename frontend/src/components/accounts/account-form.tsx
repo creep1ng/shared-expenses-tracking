@@ -15,7 +15,7 @@ import type { AccountCreatePayload } from "@/lib/accounts/types";
 export const DEFAULT_ACCOUNT_FORM_VALUES: AccountFormValues = {
   name: "",
   type: "bank_account",
-  currency: "EUR",
+  currency: "COP",
   initialBalance: "0.00",
   description: "",
 };
@@ -110,7 +110,7 @@ export function AccountForm({
             type="text"
             inputMode="text"
             maxLength={3}
-            placeholder="EUR"
+            placeholder="COP"
             aria-invalid={Boolean(form.formState.errors.currency)}
             {...form.register("currency")}
           />
@@ -137,7 +137,7 @@ export function AccountForm({
       </div>
 
       <label className="auth-field" htmlFor={`${fieldIdPrefix}-description`}>
-        <span className="auth-label">Descripcion</span>
+          <span className="auth-label">Descripción</span>
         <textarea
           id={`${fieldIdPrefix}-description`}
           className="auth-input auth-textarea"

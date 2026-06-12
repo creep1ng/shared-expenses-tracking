@@ -38,6 +38,18 @@ function toCategoryFormDefaults(category: Category) {
   } as const;
 }
 
+function getVisibleCategoryIcon(icon: string): string | null {
+  const trimmedIcon = icon.trim();
+
+  if (!trimmedIcon) {
+    return null;
+  }
+
+  return Array.from(trimmedIcon).some((character) => character.length > 1 && !/[\w-]/.test(character))
+    ? trimmedIcon
+    : null;
+}
+
 export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -71,7 +83,7 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
     try {
       const category = await createCategory(workspaceId, payload);
       setCategories((currentCategories) => getSelectableCategories([category, ...currentCategories]));
-      setNotice({ type: "success", message: `Categoria ${category.name} creada correctamente.` });
+      setNotice({ type: "success", message: `Categoría ${category.name} creada correctamente.` });
       setIsCreateModalOpen(false);
       return true;
     } catch (error) {
@@ -92,7 +104,7 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
           ),
         ),
       );
-      setNotice({ type: "success", message: `Categoria ${updatedCategory.name} actualizada.` });
+      setNotice({ type: "success", message: `Categoría ${updatedCategory.name} actualizada.` });
       return true;
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
@@ -102,7 +114,7 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
 
   const handleArchive = async (category: Category) => {
     const shouldArchive = window.confirm(
-      `Vas a archivar la categoria ${category.name}. Dejara de aparecer en los selectores activos.`,
+      `Vas a archivar la categoría ${category.name}. Dejará de aparecer en los selectores activos.`,
     );
 
     if (!shouldArchive) {
@@ -119,7 +131,7 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
       if (editingCategoryId === archivedCategory.id) {
         setEditingCategoryId(null);
       }
-      setNotice({ type: "success", message: `Categoria ${archivedCategory.name} archivada.` });
+      setNotice({ type: "success", message: `Categoría ${archivedCategory.name} archivada.` });
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) });
     }
@@ -128,14 +140,14 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
   return (
     <section className="workspace-panel">
       {mode === "crud" ? (
-        <div className="workspace-form-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="workspace-form-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h2 className="workspace-section-title">Categorías</h2>
             <p className="workspace-section-copy">
-              Las listas y selectores muestran categorias activas por defecto para mantener limpio el flujo.
+              Las listas y selectores muestran categorías activas por defecto para mantener limpio el flujo.
             </p>
           </div>
-          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="primary-action" onClick={() => setIsCreateModalOpen(true)} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <Plus size={16} /> Nueva categoría
           </button>
         </div>
@@ -154,38 +166,45 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
         </div>
       ) : null}
 
-      <div className={mode === "crud" ? "dashboard-kpi-grid" : "dashboard-kpi-grid"} aria-label="Categorias activas del espacio" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-        {isLoading ? <p className="workspace-section-copy">Cargando categorias...</p> : null}
+      <div className="dashboard-kpi-grid" aria-label="Categorías activas del espacio" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "1.5rem" }}>
+        {isLoading ? <p className="workspace-section-copy">Cargando categorías...</p> : null}
 
         {!isLoading && categories.length === 0 ? (
           <p className="workspace-section-copy">
-            Todavia no hay categorias activas. Crea una para clasificar mejor tus movimientos.
+            Todavía no hay categorías activas. Crea una para clasificar mejor tus movimientos.
           </p>
         ) : null}
 
         {!isLoading
           ? categories.map((category) => {
               const isEditing = editingCategoryId === category.id;
+              const visibleIcon = getVisibleCategoryIcon(category.icon);
 
               return (
-                <article key={category.id} className="kpi-card" style={{ borderTop: `4px solid ${category.color}`, padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
-                      <h3 className="kpi-label" style={{ fontSize: '1.1rem', margin: 0, color: 'var(--foreground)' }}>{category.name}</h3>
+                <article key={category.id} className="kpi-card" style={{ borderTop: `4px solid ${category.color}`, padding: "1.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span
+                        aria-hidden="true"
+                        className="category-marker"
+                        style={{ backgroundColor: visibleIcon ? undefined : category.color }}
+                      >
+                        {visibleIcon}
+                      </span>
+                      <h3 className="kpi-label" style={{ fontSize: "1.1rem", margin: 0, color: "var(--foreground)" }}>{category.name}</h3>
                     </div>
-                    <span className="workspace-role-chip" style={{ fontSize: '0.75rem' }}>{CATEGORY_TYPE_LABELS[category.type]}</span>
+                    <span className="workspace-role-chip" style={{ fontSize: "0.75rem" }}>{CATEGORY_TYPE_LABELS[category.type]}</span>
                   </div>
 
                   {mode === "crud" && (
-                     <div className="entity-actions categories-actions" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--surface-border)' }}>
+                     <div className="entity-actions categories-actions" style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--surface-border)" }}>
                        <button
                          className="secondary-action entity-secondary-action"
                          onClick={() => setEditingCategoryId(isEditing ? null : category.id)}
                          type="button"
-                         style={{ flex: 1, padding: '0.4rem' }}
+                         style={{ flex: 1, padding: "0.4rem" }}
                        >
-                         {isEditing ? "Cerrar edicion" : "Editar"}
+                          {isEditing ? "Cerrar edición" : "Editar"}
                        </button>
                        <button
                          className="secondary-action entity-danger-action"
@@ -193,7 +212,7 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
                            void handleArchive(category);
                          }}
                          type="button"
-                         style={{ padding: '0.4rem' }}
+                         style={{ padding: "0.4rem" }}
                        >
                          Archivar
                        </button>
@@ -201,13 +220,13 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
                   )}
 
                   {isEditing && mode === "crud" ? (
-                    <div className="entity-inline-form" style={{ marginTop: '1rem' }}>
+                    <div className="entity-inline-form" style={{ marginTop: "1rem" }}>
                       <CategoryForm
                         defaultValues={toCategoryFormDefaults(category)}
                         fieldIdPrefix={`category-edit-${category.id}`}
                         onCancel={() => setEditingCategoryId(null)}
                         onSubmitCategory={(payload) => handleUpdate(category.id, payload)}
-                        submitLabel="Guardar"
+                        submitLabel="Guardar cambios"
                         submittingLabel="..."
                       />
                     </div>
@@ -223,14 +242,14 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
           isOpen={isCreateModalOpen} 
           onClose={() => setIsCreateModalOpen(false)} 
           title="Nueva categoría"
-          description="Las categorias base sembradas por backend aparecen aqui y puedes ampliarlas segun el espacio."
+          description="Las categorías base sembradas por backend aparecen aquí y puedes ampliarlas según el espacio."
         >
           <CategoryForm
             defaultValues={DEFAULT_CATEGORY_FORM_VALUES}
             fieldIdPrefix={`category-create-${workspaceId}`}
             onSubmitCategory={handleCreate}
             resetOnSuccess
-            submitLabel="Crear categoria"
+            submitLabel="Crear categoría"
             submittingLabel="Guardando..."
           />
         </Modal>

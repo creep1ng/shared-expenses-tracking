@@ -63,9 +63,9 @@ export function PasswordResetConfirmForm() {
 
   return (
     <AuthCard
-      eyebrow="Actualizar contrasena"
-      title="Confirma tu nueva contrasena"
-      description="Pega el token emitido por el backend y define una nueva contrasena segura."
+      eyebrow="Actualizar contraseña"
+      title="Confirma tu nueva contraseña"
+      description="Pega el token emitido por el backend y define una nueva contraseña segura."
     >
       <form className="auth-form" onSubmit={onSubmit} noValidate>
         <AuthErrorBanner message={submitError} />
@@ -77,7 +77,7 @@ export function PasswordResetConfirmForm() {
         ) : null}
 
         <label className="auth-field" htmlFor="token">
-          <span className="auth-label">Token de recuperacion</span>
+          <span className="auth-label">Token de recuperación</span>
           <input
             autoComplete="one-time-code"
             className="auth-input"
@@ -92,7 +92,7 @@ export function PasswordResetConfirmForm() {
         </label>
 
         <label className="auth-field" htmlFor="newPassword">
-          <span className="auth-label">Nueva contrasena</span>
+          <span className="auth-label">Nueva contraseña</span>
           <input
             autoComplete="new-password"
             className="auth-input"
@@ -107,11 +107,11 @@ export function PasswordResetConfirmForm() {
         </label>
 
         <button className="primary-action auth-submit" type="submit" disabled={isPending}>
-          {isPending ? "Actualizando..." : "Actualizar contrasena"}
+          {isPending ? "Actualizando..." : "Actualizar contraseña"}
         </button>
 
         <div className="auth-links-row">
-          <Link href={"/sign-in" as Route}>Volver a iniciar sesion</Link>
+          <Link href={"/sign-in" as Route}>Volver a iniciar sesión</Link>
         </div>
       </form>
     </AuthCard>

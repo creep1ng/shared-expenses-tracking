@@ -58,11 +58,11 @@ describe("InvitationAcceptForm", () => {
 
     render(<InvitationAcceptForm initialToken="query-token-12345678901234567890" />);
 
-    expect(screen.getByLabelText(/token de invitacion/i)).toHaveValue(
+    expect(screen.getByLabelText(/token de invitación/i)).toHaveValue(
       "query-token-12345678901234567890",
     );
 
-    await user.click(screen.getByRole("button", { name: /aceptar invitacion/i }));
+    await user.click(screen.getByRole("button", { name: /aceptar invitación/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent(/te has unido a viaje a madrid/i);
 
@@ -84,12 +84,12 @@ describe("InvitationAcceptForm", () => {
 
     render(<InvitationAcceptForm initialToken={null} />);
 
-    const tokenInput = screen.getByLabelText(/token de invitacion/i);
+    const tokenInput = screen.getByLabelText(/token de invitación/i);
     expect(tokenInput).toHaveValue("");
 
     await user.type(tokenInput, "manual-token-12345678901234567890");
 
-    await user.click(screen.getByRole("button", { name: /aceptar invitacion/i }));
+    await user.click(screen.getByRole("button", { name: /aceptar invitación/i }));
 
     expect(acceptWorkspaceInvitationMock).toHaveBeenCalledWith({
       token: "manual-token-12345678901234567890",
