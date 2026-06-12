@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { CATEGORY_TYPE_OPTIONS } from "@/lib/categories/presentation";
+import { CategoryIcon, CATEGORY_ICON_OPTIONS } from "@/lib/categories/icons";
 import { categoryFormSchema, type CategoryFormValues } from "@/lib/categories/schemas";
 import type { CategoryCreatePayload } from "@/lib/categories/types";
 
@@ -36,9 +37,24 @@ export function CategoryForm({
   fieldIdPrefix,
 }: CategoryFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [iconSearch, setIconSearch] = React.useState("");
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues,
+  });
+  const selectedIcon = form.watch("icon");
+
+  const visibleIconOptions = CATEGORY_ICON_OPTIONS.filter((option) => {
+    const normalizedSearch = iconSearch.trim().toLocaleLowerCase("es");
+
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    return [option.label, option.slug, ...option.keywords]
+      .join(" ")
+      .toLocaleLowerCase("es")
+      .includes(normalizedSearch);
   });
 
   useEffect(() => {
@@ -103,20 +119,58 @@ export function CategoryForm({
           ) : null}
         </label>
 
-        <label className="auth-field" htmlFor={`${fieldIdPrefix}-icon`}>
-          <span className="auth-label">Ícono</span>
-          <input
-            id={`${fieldIdPrefix}-icon`}
-            className="auth-input"
-            type="text"
-            placeholder="receipt-text"
+        <fieldset className="auth-field category-icon-picker">
+          <legend className="auth-label" id={`${fieldIdPrefix}-icon-label`}>
+            Ícono
+          </legend>
+          <input id={`${fieldIdPrefix}-icon`} type="hidden" {...form.register("icon")} />
+          <label className="category-icon-search" htmlFor={`${fieldIdPrefix}-icon-search`}>
+            <span className="sr-only">Buscar ícono</span>
+            <input
+              id={`${fieldIdPrefix}-icon-search`}
+              className="auth-input"
+              type="search"
+              placeholder="Buscar ícono"
+              value={iconSearch}
+              onChange={(event) => setIconSearch(event.target.value)}
+            />
+          </label>
+          <div
+            className="category-icon-grid"
+            role="radiogroup"
+            aria-labelledby={`${fieldIdPrefix}-icon-label`}
             aria-invalid={Boolean(form.formState.errors.icon)}
-            {...form.register("icon")}
-          />
+          >
+            {visibleIconOptions.length > 0 ? (
+              visibleIconOptions.map((option) => {
+                const isSelected = selectedIcon === option.slug;
+
+                return (
+                  <button
+                    key={option.slug}
+                    className={`category-icon-option${isSelected ? " category-icon-option-selected" : ""}`}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={option.label}
+                    title={option.label}
+                    onClick={() => {
+                      form.setValue("icon", option.slug, { shouldDirty: true, shouldValidate: true });
+                    }}
+                  >
+                    <CategoryIcon icon={option.slug} size={20} />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })
+            ) : (
+              <p className="category-icon-empty">No encontramos íconos para esa búsqueda.</p>
+            )}
+          </div>
           {form.formState.errors.icon ? (
             <span className="auth-field-error">{form.formState.errors.icon.message}</span>
           ) : null}
-        </label>
+        </fieldset>
 
         <label className="auth-field" htmlFor={`${fieldIdPrefix}-color`}>
           <span className="auth-label">Color</span>

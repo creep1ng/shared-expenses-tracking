@@ -10,6 +10,7 @@ import {
   DEFAULT_CATEGORY_FORM_VALUES,
 } from "@/components/categories/category-form";
 import { getErrorMessage } from "@/lib/auth/errors";
+import { CategoryIcon } from "@/lib/categories/icons";
 import {
   archiveCategory,
   createCategory,
@@ -36,18 +37,6 @@ function toCategoryFormDefaults(category: Category) {
     icon: category.icon,
     color: category.color,
   } as const;
-}
-
-function getVisibleCategoryIcon(icon: string): string | null {
-  const trimmedIcon = icon.trim();
-
-  if (!trimmedIcon) {
-    return null;
-  }
-
-  return Array.from(trimmedIcon).some((character) => character.length > 1 && !/[\w-]/.test(character))
-    ? trimmedIcon
-    : null;
 }
 
 export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelProps) {
@@ -178,8 +167,6 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
         {!isLoading
           ? categories.map((category) => {
               const isEditing = editingCategoryId === category.id;
-              const visibleIcon = getVisibleCategoryIcon(category.icon);
-
               return (
                 <article key={category.id} className="kpi-card" style={{ borderTop: `4px solid ${category.color}`, padding: "1.5rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
@@ -187,9 +174,9 @@ export function CategoriesPanel({ workspaceId, mode = "crud" }: CategoriesPanelP
                       <span
                         aria-hidden="true"
                         className="category-marker"
-                        style={{ backgroundColor: visibleIcon ? undefined : category.color }}
+                        style={{ backgroundColor: category.color }}
                       >
-                        {visibleIcon}
+                        <CategoryIcon icon={category.icon} />
                       </span>
                       <h3 className="kpi-label" style={{ fontSize: "1.1rem", margin: 0, color: "var(--foreground)" }}>{category.name}</h3>
                     </div>
